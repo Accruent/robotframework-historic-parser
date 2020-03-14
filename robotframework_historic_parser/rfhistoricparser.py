@@ -35,8 +35,8 @@ def generate_report(opts):
     print("Capturing execution results, This may take few minutes...")
 
     # connect to database
-    mydb = connect_to_mysql_db(opts.host, opts.username, opts.password, opts.projectname)
-    rootdb = connect_to_mysql_db(opts.host, opts.username, opts.password, 'robothistoric')
+    mydb = connect_to_mysql_db(opts.host, int(opts.port), opts.username, opts.password, opts.projectname)
+    rootdb = connect_to_mysql_db(opts.host, int(opts.port), opts.username, opts.password, 'robothistoric')
 
     test_stats = SuiteStats()
     result.visit(test_stats)
