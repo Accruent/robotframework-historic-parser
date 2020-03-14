@@ -35,8 +35,8 @@ def generate_report(opts):
     print("Capturing execution results, This may take few minutes...")
 
     # connect to database
-    mydb = connect_to_mysql_db(opts.host, 32715, opts.username, opts.password, opts.projectname)
-    rootdb = connect_to_mysql_db(opts.host, 32715, opts.username, opts.password, 'robothistoric')
+    mydb = connect_to_mysql_db(opts.host, opts.port, opts.username, opts.password, opts.projectname)
+    rootdb = connect_to_mysql_db(opts.host, opts.port, opts.username, opts.password, 'robothistoric')
 
     test_stats = SuiteStats()
     result.visit(test_stats)
@@ -141,7 +141,7 @@ def insert_into_execution_table(con, ocon, name, total, passed, failed, ctime, s
     rows = cursorObj.fetchone()
     cursorObj.execute("SELECT COUNT(*) FROM TB_EXECUTION;")
     execution_rows = cursorObj.fetchone()
-    # update robothistoric.tb_project table
+    # update robothistoric.TB_PROJECT table
     rootCursorObj.execute("UPDATE TB_PROJECT SET Last_Updated = now(), Total_Executions = %s, Recent_Pass_Perc =%s WHERE Project_Name='%s';" % (execution_rows[0], float("{0:.2f}".format((rows[1]/rows[2]*100))), projectname))
     ocon.commit()
     return str(rows[0])
