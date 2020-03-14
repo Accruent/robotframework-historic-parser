@@ -121,7 +121,7 @@ def connect_to_mysql_db(host, port, user, pwd, db):
     try:
         mydb = mysql.connector.connect(
             host=host,
-            port=port,
+            port=int(port),
             user=user,
             passwd=pwd,
             database=db
