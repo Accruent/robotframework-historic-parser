@@ -117,10 +117,11 @@ def get_time_in_min(time_str):
     crtime = float("{0:.2f}".format(ctime/60))
     return crtime
 
-def connect_to_mysql_db(host, user, pwd, db):
+def connect_to_mysql_db(host, port, user, pwd, db):
     try:
         mydb = mysql.connector.connect(
             host=host,
+            port=port,
             user=user,
             passwd=pwd,
             database=db
