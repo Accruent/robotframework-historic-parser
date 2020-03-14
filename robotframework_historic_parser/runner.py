@@ -15,6 +15,13 @@ def parse_options():
         default='localhost',
         help="MySQL hosted address"
     )
+    
+    general.add_argument(
+        '-t', '--port',
+        dest='port',
+        default=3306,
+        help="MySQL port"
+    )
 
     general.add_argument(
         '-u', '--username',
