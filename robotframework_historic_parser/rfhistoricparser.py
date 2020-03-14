@@ -35,8 +35,8 @@ def generate_report(opts):
     print("Capturing execution results, This may take few minutes...")
 
     # connect to database
-    mydb = connect_to_mysql_db(opts.host, int(opts.port), opts.username, opts.password, opts.projectname)
-    rootdb = connect_to_mysql_db(opts.host, int(opts.port), opts.username, opts.password, 'robothistoric')
+    mydb = mysql.connector.connect(opts.host, 32715, opts.username, opts.password, opts.projectname)
+    rootdb = mysql.connector.connect(opts.host, 32715, opts.username, opts.password, 'robothistoric')
 
     test_stats = SuiteStats()
     result.visit(test_stats)
@@ -117,11 +117,11 @@ def get_time_in_min(time_str):
     crtime = float("{0:.2f}".format(ctime/60))
     return crtime
 
-def connect_to_mysql_db(host, port, user, pwd, db):
+def mysql.connector.connect(host, port, user, pwd, db):
     try:
         mydb = mysql.connector.connect(
             host=host,
-            port=int(port),
+            port=32715,
             user=user,
             passwd=pwd,
             database=db
