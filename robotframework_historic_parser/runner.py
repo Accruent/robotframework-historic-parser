@@ -19,7 +19,7 @@ def parse_options():
     general.add_argument(
         '-t', '--port',
         dest='port',
-        default=3306,
+        default='3306',
         help="MySQL port"
     )
 
