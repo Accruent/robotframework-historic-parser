@@ -97,7 +97,7 @@ class SuiteResults(ResultVisitor):
         else:
             stats = suite.statistics
             time = float("{0:.2f}".format(suite.elapsedtime / float(60000)))
-            insert_into_suite_table(self.db, self.id, str(suite.parent + " - " + suite), str(suite.status), int(stats.all.total), int(stats.all.passed), int(stats.all.failed), float(time))
+            insert_into_suite_table(self.db, self.id, str(suite), str(suite.status), int(stats.all.total), int(stats.all.passed), int(stats.all.failed), float(time))
 
 class TestMetrics(ResultVisitor):
 
@@ -106,7 +106,7 @@ class TestMetrics(ResultVisitor):
         self.id = id
 
     def visit_test(self, test):
-        name = str(test.parent.parent) + " - " + str(test.parent) + " - " + str(test)
+        name = str(test.parent) + " - " + str(test)
         time = float("{0:.2f}".format(test.elapsedtime / float(60000)))
         error = str(test.message)
         insert_into_test_table(self.db, self.id, str(name), str(test.status), time, error)
