@@ -20,7 +20,6 @@ setup(
       zip_safe=False,
 
       install_requires=[
-          'robotframework',
           'mysql-connector',
       ],
       entry_points={
