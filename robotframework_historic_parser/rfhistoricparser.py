@@ -39,8 +39,8 @@ def rfhistoric_parser(opts):
     print("Capturing execution results, This may take few minutes...")
 
     # connect to database
-    mydb = connect_to_mysql_db(opts.host, opts.username, opts.password, opts.projectname)
-    rootdb = connect_to_mysql_db(opts.host, opts.username, opts.password, 'robothistoric')
+    mydb = connect_to_mysql_db(opts.host, opts.port, opts.username, opts.password, opts.projectname)
+    rootdb = connect_to_mysql_db(opts.host, opts.port, opts.username, opts.password, 'robothistoric')
 
     test_stats = SuiteStats()
     result.visit(test_stats)
@@ -175,11 +175,12 @@ def get_time_in_min(time_str):
     return crtime
 
 
-def connect_to_mysql_db(host, user, pwd, db):
+def connect_to_mysql_db(host, port, user, pwd, db):
     """Method for connection to db"""
     try:
         mydb = mysql.connector.connect(
             host=host,
+            port=port,
             user=user,
             passwd=pwd,
             database=db
