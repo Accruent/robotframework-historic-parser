@@ -195,11 +195,12 @@ def insert_into_execution_table(con, ocon, name, total, passed, failed, ctime, s
     """Method for inserting parsed data into tb_execution"""
     cursor_obj = con.cursor()
     root_cursor_obj = ocon.cursor()
+    utc = datetime.datetime.utcnow()
     sql = "INSERT INTO TB_EXECUTION (Execution_Id, Execution_Date, Execution_Desc, " \
           "Execution_Total, Execution_Pass, Execution_Fail, Execution_Time, Execution_STotal, " \
-          "Execution_SPass, Execution_SFail, Execution_Skip, Execution_SSkip) VALUES (%s, now(), " \
+          "Execution_SPass, Execution_SFail, Execution_Skip, Execution_SSkip) VALUES (0, %s, " \
           "%s, %s, %s, %s, %s, %s, %s, %s, %s, %s);"
-    val = (0, name, total, passed, failed, ctime, stotal, spass, sfail, skipped, sskipped)
+    val = (utc, name, total, passed, failed, ctime, stotal, spass, sfail, skipped, sskipped)
     cursor_obj.execute(sql, val)
     con.commit()
     cursor_obj.execute(
@@ -210,9 +211,10 @@ def insert_into_execution_table(con, ocon, name, total, passed, failed, ctime, s
     execution_rows = cursor_obj.fetchone()
     # update robothistoric.TB_PROJECT table
     root_cursor_obj.execute(
-        "UPDATE TB_PROJECT SET Last_Updated = now(), Total_Executions = %s, Recent_Pass_Perc =%s "
-        "WHERE Project_Name='%s';" % (
-            execution_rows[0], float("{0:.2f}".format((rows[1] / rows[2] * 100))), projectname))
+        "UPDATE TB_PROJECT SET Last_Updated = '%s', Total_Executions = %s, Recent_Pass_Perc =%s "
+        "WHERE Project_Name='%s';" % (utc, execution_rows[0],
+                                      float("{0:.2f}".format((rows[1] / rows[2] * 100))),
+                                      projectname))
     ocon.commit()
     return str(rows[0])
 
