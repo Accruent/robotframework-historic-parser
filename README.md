@@ -1,4 +1,4 @@
-# robotframework-historic-parser
+# robotframework-historic-parser 
 
 Parser to push robotframework execution results to MySQL (for Robotframework Historic report)
 
