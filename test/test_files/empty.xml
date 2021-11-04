@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<robot generator="Robot 4.1.2 (Python 3.9.5 on win32)" generated="20211104 04:37:18.801" rpa="false" schemaversion="2">
+<suite id="s1" name="WorkOrder" source="C:\Jenkins\workspace\Generic Job@2\GUI\TestSuite\Express\WorkOrder">
+<status status="SKIP" starttime="20211104 04:37:18.807" endtime="20211104 04:37:18.867"/>
+</suite>
+<statistics>
+<total>
+<stat pass="0" fail="0" skip="0">All Tests</stat>
+</total>
+<tag>
+</tag>
+<suite>
+<stat pass="0" fail="0" skip="0" id="s1" name="WorkOrder">WorkOrder</stat>
+</suite>
+</statistics>
+<errors>
+</errors>
+</robot>
