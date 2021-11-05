@@ -8,6 +8,7 @@ Parser to push robotframework execution results to MySQL (for Robotframework His
 ![Maintenance](https://img.shields.io/badge/Maintained%3F-yes-green.svg)
 ![Open Source Love png1](https://badges.frapsoft.com/os/v1/open-source.png?v=103)
 [![HitCount](http://hits.dwyl.io/adiralashiva8/robotframework-historic-parser.svg)](http://hits.dwyl.io/adiralashiva8/robotframework-historic-parser)
+[![Coverage Status](https://coveralls.io/repos/github/Accruent/robotframework-historic-parser/badge.svg?branch=master)](https://coveralls.io/github/Accruent/robotframework-historic-parser?branch=master)
 
 ---
 
