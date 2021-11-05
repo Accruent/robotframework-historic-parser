@@ -27,4 +27,4 @@ jobs:
           flag-name: run-${{ matrix.python-version }}
           parallel: true
         run: |
-          coveralls --service=github -v
+          coveralls --service=github
