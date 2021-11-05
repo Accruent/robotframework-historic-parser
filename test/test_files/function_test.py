@@ -2,15 +2,8 @@
 import io
 import sys
 import unittest
-import os
-
 from robotframework_historic_parser.parserargs import parse_options
-
 from robotframework_historic_parser.rfhistoricparser import get_time_in_min, rfhistoric_parser
-
-ROOT_PATH = os.path.abspath(os.path.dirname(__file__))
-THIS_DATE = "Aug 30 2020 10:43 PM CDT"
-COMP_DATE = "Jul 30 2020 9:43 PM CDT"
 
 
 class TestFunctions(unittest.TestCase):
