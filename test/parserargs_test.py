@@ -1,8 +1,9 @@
 """Unit tests for functions used in Robot Framework Historic Parser parserargs"""
 import sys
 import unittest
+from unittest.mock import patch
 
-from robotframework_historic_parser.parserargs import parse_options
+from robotframework_historic_parser.parserargs import parse_options, main
 
 
 class TestRunner(unittest.TestCase):
@@ -127,3 +128,11 @@ class TestRunner(unittest.TestCase):
         sys.argv[1:] = ['-f']
         with self.assertRaises(SystemExit):
             parse_options()
+
+    @patch('robotframework_historic_parser.parserargs.rfhistoric_parser')
+    # pylint: disable=R0201
+    def test_main(self, pzf_mock):
+        """Tests main function"""
+        sys.argv[1:] = ['-f', 'test_files/testReport.html']
+        main()
+        pzf_mock.assert_called()
