@@ -1,14 +1,10 @@
 [run]
 omit =
     *__init__.py*
-    *old_rfhistoricparser.py*
-    *old_runner.py*
 
 [report]
 omit =
     *__init__.py*
-    *old_rfhistoricparser.py*
-    *old_runner.py*
 
 # Regexes for lines to exclude from consideration
 exclude_lines =
