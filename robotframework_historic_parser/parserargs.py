@@ -77,8 +77,7 @@ def parse_options():
         help="Use full suite name"
     )
 
-    args = parser.parse_args()
-    return args
+    return parser.parse_args()
 
 
 def main():
