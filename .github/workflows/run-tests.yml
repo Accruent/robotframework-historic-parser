@@ -20,7 +20,7 @@ jobs:
           pip install coveralls mock pytest-cov
       - name: Run Unit Tests
         run: |
-          pytest --cov-config=.coveragerc --cov=robotframework_historic_parser -v
+          pytest --cov-config=test/.coveragerc --cov=robotframework_historic_parser -v
       - name: Coveralls
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
