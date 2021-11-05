@@ -2,7 +2,7 @@
 import unittest
 from unittest.mock import patch, MagicMock, call
 
-from robotframework_historic_parser.old_rfhistoricparser import connect_to_mysql_db
+from robotframework_historic_parser.rfhistoricparser import connect_to_mysql_db
 
 
 class TestDBFunctions(unittest.TestCase):

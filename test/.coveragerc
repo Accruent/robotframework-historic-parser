@@ -1,6 +1,8 @@
 [run]
 omit =
-    __init__.py
+    robotframework_historic_parser/__init__.py
+    robotframework_historic_parser/old_rfhistoricparser.py
+    robotframework_historic_parser/old_runner.py
 
 [report]
 # Regexes for lines to exclude from consideration
