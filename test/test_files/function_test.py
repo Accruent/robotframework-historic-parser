@@ -2,6 +2,8 @@
 import io
 import sys
 import unittest
+from unittest.mock import patch
+
 from robotframework_historic_parser.parserargs import parse_options
 from robotframework_historic_parser.rfhistoricparser import get_time_in_min, rfhistoric_parser
 
@@ -20,13 +22,12 @@ class TestFunctions(unittest.TestCase):
         """This test verifies that get_time_in_min returns error if invalid input is passed. """
         self.assertRaisesRegex(ValueError, 'not enough values to unpack', get_time_in_min, 'a')
 
-    def test_rfhistoric_parser_ignore_result(self):
-        """This test verifies that get_time_in_min returns a time in minutes. """
-        captured_output = io.StringIO()
-        sys.stdout = captured_output
+    @patch('builtins.print')
+    def test_rfhistoric_parser_ignore_result(self, mock_print):
+        """This test verifies that the parser ignores any results if the ignore result argument
+        is set to True. """
         sys.argv[1:] = ['-g', 'True']
         test_opts = parse_options()
-        rfhistoric_parser(test_opts)
-        sys.stdout = sys.__stdout__
-        result = captured_output.getvalue().strip()
-        self.assertEqual(result, 'Ignoring execution results...')
+        result = rfhistoric_parser(test_opts)
+        mock_print.assert_called_with("Ignoring execution results...")
+        self.assertEqual(result, None)
