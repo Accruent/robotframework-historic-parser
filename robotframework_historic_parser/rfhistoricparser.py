@@ -6,7 +6,7 @@ from robot.api import ExecutionResult, ResultVisitor
 
 
 def rfhistoric_parser(opts):
-    """Main parsing funcion."""
+    """Main parsing function."""
     if opts.ignoreresult == "True":
         print("Ignoring execution results...")
         return
@@ -171,8 +171,7 @@ def get_time_in_min(time_str):
     """Method converting time to minutes"""
     h, m, s = time_str.split(':')
     ctime = int(h) * 3600 + int(m) * 60 + int(s)
-    crtime = float("{0:.2f}".format(ctime / 60))
-    return crtime
+    return float("{0:.2f}".format(ctime / 60))
 
 
 def connect_to_mysql_db(host, port, user, pwd, db):
