@@ -6,7 +6,7 @@ from robot.api import ExecutionResult, ResultVisitor
 
 
 def rfhistoric_parser(opts):
-    """Main parsing funcion."""
+    """Main parsing function."""
     if opts.ignoreresult == "True":
         print("Ignoring execution results...")
         return

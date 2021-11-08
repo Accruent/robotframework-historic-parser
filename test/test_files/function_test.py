@@ -1,11 +1,13 @@
 """Unit tests for functions used in Robot Framework Historic Parser"""
-import io
+import os
 import sys
 import unittest
 from unittest.mock import patch
 
 from robotframework_historic_parser.parserargs import parse_options
 from robotframework_historic_parser.rfhistoricparser import get_time_in_min, rfhistoric_parser
+
+ROOT_PATH = os.path.abspath(os.path.dirname(__file__))
 
 
 class TestFunctions(unittest.TestCase):
@@ -31,3 +33,11 @@ class TestFunctions(unittest.TestCase):
         result = rfhistoric_parser(test_opts)
         mock_print.assert_called_with("Ignoring execution results...")
         self.assertEqual(result, None)
+
+    # def test_rfhistoric_parser(self):
+    #     """This test verifies that the rfhistoric parser function. """
+    #     file_path = ROOT_PATH + "/" + "empty.xml"
+    #     sys.argv[1:] = ['-o', file_path]
+    #     test_opts = parse_options()
+    #     result = rfhistoric_parser(test_opts)
+    #     print(result)
