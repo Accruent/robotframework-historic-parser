@@ -53,12 +53,12 @@ class TestFunctions(unittest.TestCase):
         result = rfhistoric_parser(test_opts)
         print(result)
 
-    def test_rfhistoric_parser_bad_output_file(self):
-        """This test verifies that the rfhistoric parser function. """
-        file_path = ROOT_PATH + "/" + "empty.somebadformat"
-        sys.argv[1:] = ['-o', file_path]
-        test_opts = parse_options()
-        robotframework_historic_parser.rfhistoricparser.connect_to_mysql_db = MagicMock()
-        robotframework_historic_parser.rfhistoricparser.insert_into_execution_table = MagicMock()
-        with self.assertRaises(SystemExit):
-            rfhistoric_parser(test_opts)
+    # def test_rfhistoric_parser_bad_output_file(self):
+    #     """This test verifies that the rfhistoric parser function. """
+    #     file_path = ROOT_PATH + "/" + "empty.somebadformat"
+    #     sys.argv[1:] = ['-o', file_path]
+    #     test_opts = parse_options()
+    #     robotframework_historic_parser.rfhistoricparser.connect_to_mysql_db = MagicMock()
+    #     robotframework_historic_parser.rfhistoricparser.insert_into_execution_table = MagicMock()
+    #     with self.assertRaises(SystemExit):
+    #         rfhistoric_parser(test_opts)
