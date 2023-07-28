@@ -3,6 +3,7 @@ import os
 import datetime
 import mysql.connector
 from robot.api import ExecutionResult, ResultVisitor
+import xml.etree.ElementTree as ET
 
 
 def rfhistoric_parser(opts):
@@ -31,62 +32,91 @@ def rfhistoric_parser(opts):
         # We have files missing.
         exit("output.xml file is missing: {}".format(", ".join(missing_files)))
 
-    # Read output.xml file
-    result = ExecutionResult(*output_names)
-    result.configure(stat_config={'suite_stat_level': 2,
-                                  'tag_stat_combine': 'tagANDanother'})
+    # total = 0
+    # passed = 0
+    # failed = 0
+    # elapsedtime = 0
+    # stotal = 0
+    # spass = 0
+    # sfail = 0
+    # skipped = 0
+    # sskip = 0
 
-    print("Capturing execution results, This may take few minutes...")
+    if opts.report_type == "RF":
+        # connect to database
+        mydb = connect_to_mysql_db(opts.host, opts.port, opts.username, opts.password, opts.projectname)
+        rootdb = connect_to_mysql_db(opts.host, opts.port, opts.username, opts.password, 'robothistoric')
 
-    # connect to database
-    mydb = connect_to_mysql_db(opts.host, opts.port, opts.username, opts.password, opts.projectname)
-    rootdb = connect_to_mysql_db(opts.host, opts.port, opts.username, opts.password, 'robothistoric')
+        # Read output.xml file
+        result = ExecutionResult(*output_names)
+        result.configure(stat_config={'suite_stat_level': 2,
+                                      'tag_stat_combine': 'tagANDanother'})
 
-    test_stats = SuiteStats()
-    result.visit(test_stats)
+        print("Capturing execution results, This may take few minutes...")
 
-    try:
-        test_stats_obj = test_stats.all
-    except:
-        test_stats_obj = test_stats
-    stotal = test_stats_obj.total_suite
-    spass = test_stats_obj.passed_suite
-    sfail = test_stats_obj.failed_suite
-    try:
-        sskip = test_stats_obj.skipped_suite
-    except:
-        sskip = 0
+        test_stats = SuiteStats()
+        result.visit(test_stats)
 
-    stats = result.statistics
-    try:
-        stats_obj = stats.total.all
-    except:
-        stats_obj = stats.total
-    total = stats_obj.total
-    passed = stats_obj.passed
-    failed = stats_obj.failed
-    try:
-        skipped = stats_obj.skipped
-    except:
-        skipped = 0
+        try:
+            test_stats_obj = test_stats.all
+        except:
+            test_stats_obj = test_stats
+        stotal = test_stats_obj.total_suite
+        spass = test_stats_obj.passed_suite
+        sfail = test_stats_obj.failed_suite
+        try:
+            sskip = test_stats_obj.skipped_suite
+        except:
+            sskip = 0
 
-    elapsedtime = datetime.datetime(1970, 1, 1) + \
-        datetime.timedelta(milliseconds=result.suite.elapsedtime)
-    elapsedtime = get_time_in_min(elapsedtime.strftime("%X"))
-    elapsedtime = float("{0:.2f}".format(elapsedtime))
+        stats = result.statistics
+        try:
+            stats_obj = stats.total.all
+        except:
+            stats_obj = stats.total
+        total = stats_obj.total
+        passed = stats_obj.passed
+        failed = stats_obj.failed
+        try:
+            skipped = stats_obj.skipped
+        except:
+            skipped = 0
 
-    # insert test results info into db
-    result_id = insert_into_execution_table(mydb, rootdb, opts.executionname, total, passed,
-                                            failed, elapsedtime, stotal, spass, sfail, skipped,
-                                            sskip, opts.projectname)
+        elapsedtime = datetime.datetime(1970, 1, 1) + \
+            datetime.timedelta(milliseconds=result.suite.elapsedtime)
+        elapsedtime = get_time_in_min(elapsedtime.strftime("%X"))
+        elapsedtime = float("{0:.2f}".format(elapsedtime))
 
-    print("INFO: Capturing suite results")
-    result.visit(SuiteResults(mydb, result_id, opts.fullsuitename))
-    print("INFO: Capturing test results")
-    result.visit(TestMetrics(mydb, result_id, opts.fullsuitename))
+        # insert test results info into db
+        result_id = insert_into_execution_table(mydb, rootdb, opts.executionname, total, passed,
+                                                failed, elapsedtime, stotal, spass, sfail, skipped,
+                                                sskip, opts.projectname)
 
-    print("INFO: Writing execution results")
-    commit_and_close_db(mydb)
+        print("INFO: Capturing suite results")
+        result.visit(SuiteResults(mydb, result_id, opts.fullsuitename))
+        print("INFO: Capturing test results")
+        result.visit(TestMetrics(mydb, result_id, opts.fullsuitename))
+
+        print("INFO: Writing execution results")
+        commit_and_close_db(mydb)
+
+    elif opts.report_type == "Allure":
+        process_allure_report(opts)
+    else:
+        exit(f"report_type of {opts.report_type} is not supported.")
+
+    # # insert test results info into db
+    # result_id = insert_into_execution_table(mydb, rootdb, opts.executionname, total, passed,
+    #                                         failed, elapsedtime, stotal, spass, sfail, skipped,
+    #                                         sskip, opts.projectname)
+    #
+    # print("INFO: Capturing suite results")
+    # result.visit(SuiteResults(mydb, result_id, opts.fullsuitename))
+    # print("INFO: Capturing test results")
+    # result.visit(TestMetrics(mydb, result_id, opts.fullsuitename))
+    #
+    # print("INFO: Writing execution results")
+    # commit_and_close_db(mydb)
 
 
 # other useful methods
@@ -247,3 +277,44 @@ def commit_and_close_db(db):
     db.commit()
     # cursorObj.close()
     # db.close()
+
+
+# Allure Report Functions
+def process_allure_report(opts):
+    mydb = connect_to_mysql_db(opts.host, opts.port, opts.username, opts.password, opts.projectname)
+    rootdb = connect_to_mysql_db(opts.host, opts.port, opts.username, opts.password, 'robothistoric')
+
+    root = ET.parse(opts.output).getroot()
+
+    total = root.get('total', '0')
+    passed = root.get('passed', '0')
+    failed = root.get('failed', '0') + root.get('inconclusive', '0')
+    skipped = root.get('skipped', '0')
+    elapsedtime = root.get('duration', '0')
+    stotal = 0
+    spass = 0
+    sfail = 0
+    sskip = 0
+
+    # print("id:", root.get('id'))
+    # print("testcasecount:", root.get('testcasecount'))
+    # print("result:", root.get('result'))
+    # print("total:", total)
+    # print("passed:", root.get('passed'))
+    # print("failed:", root.get('failed'))
+    # print("inconclusive:", root.get('inconclusive'))
+    # print("skipped:", root.get('skipped'))
+    # print("asserts:", root.get('asserts'))
+    # print("engine-version:", root.get('engine-version'))
+    # print("clr-version:", root.get('clr-version'))
+    # print("start-time:", root.get('start-time'))
+    # print("end-time:", root.get('end-time'))
+    # print("duration:", root.get('duration'))
+
+    # insert test results info into db
+    insert_into_execution_table(mydb, rootdb, opts.executionname, total, passed,
+                                            failed, elapsedtime, stotal, spass, sfail, skipped,
+                                            sskip, opts.projectname)
+
+    print("INFO: Writing execution results")
+    mydb.close()

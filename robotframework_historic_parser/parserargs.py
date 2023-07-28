@@ -1,7 +1,6 @@
 import os
 import argparse
 from .rfhistoricparser import rfhistoric_parser
-from robot.api import ExecutionResult
 
 
 def parse_options():
@@ -75,6 +74,13 @@ def parse_options():
         dest='fullsuitename',
         default="False",
         help="Use full suite name"
+    )
+
+    general.add_argument(
+        '--report_type',
+        dest='report_type',
+        default="RF",
+        help="Sets the report type to import, defaults to RF. Other options: Allure"
     )
 
     return parser.parse_args()
