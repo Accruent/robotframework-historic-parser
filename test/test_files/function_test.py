@@ -3,9 +3,10 @@ import os
 import sys
 import unittest
 from unittest.mock import patch
-
+from mock import MagicMock
+import robotframework_historic_parser.rfhistoricparser
 from robotframework_historic_parser.parserargs import parse_options
-from robotframework_historic_parser.rfhistoricparser import get_time_in_min, rfhistoric_parser
+from robotframework_historic_parser.rfhistoricparser import get_time_in_min, rfhistoric_parser, process_allure_report
 
 ROOT_PATH = os.path.abspath(os.path.dirname(__file__))
 
@@ -34,10 +35,20 @@ class TestFunctions(unittest.TestCase):
         mock_print.assert_called_with("Ignoring execution results...")
         self.assertEqual(result, None)
 
+    def test_allure_report_parser(self):
+        file_path = ROOT_PATH + "/" + "empty.xml"
+        sys.argv[1:] = ['-o', file_path]
+        test_opts = parse_options()
+        robotframework_historic_parser.rfhistoricparser.connect_to_mysql_db = MagicMock()
+        robotframework_historic_parser.rfhistoricparser.insert_into_execution_table = MagicMock()
+        process_allure_report(test_opts)
+
     def test_rfhistoric_parser(self):
         """This test verifies that the rfhistoric parser function. """
         file_path = ROOT_PATH + "/" + "empty.xml"
         sys.argv[1:] = ['-o', file_path]
         test_opts = parse_options()
+        robotframework_historic_parser.rfhistoricparser.connect_to_mysql_db = MagicMock()
+        robotframework_historic_parser.rfhistoricparser.insert_into_execution_table = MagicMock()
         result = rfhistoric_parser(test_opts)
         print(result)
