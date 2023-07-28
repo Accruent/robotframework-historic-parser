@@ -121,7 +121,7 @@ class TestRunner(unittest.TestCase):
         """Argument parser positive test for report_type"""
         sys.argv[1:] = ['--report_type', 'Allure']
         options = parse_options()
-        self.assertEqual('Allure', options.ignoreresult)
+        self.assertEqual('Allure', options.report_type)
 
     def test_report_type_empty(self):
         """Argument parser negative test for report_type"""
