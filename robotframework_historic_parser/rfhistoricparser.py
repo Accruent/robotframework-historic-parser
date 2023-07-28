@@ -15,9 +15,8 @@ def rfhistoric_parser(opts):
 
     path = os.path.abspath(os.path.expanduser(opts.path))
 
-    # output.xml files
     output_names = []
-    # support "*.xml" of output files
+    # support "*.xml" and "*.json" output files
     if opts.output == "*.xml" or opts.output == "*.json":
         for item in os.listdir(path):
             if os.path.isfile(item) and (item.endswith('.xml') or item.endswith('.json')):
@@ -48,30 +47,19 @@ def rfhistoric_parser(opts):
         test_stats = SuiteStats()
         result.visit(test_stats)
 
-        try:
-            test_stats_obj = test_stats.all
-        except:
-            test_stats_obj = test_stats
+        test_stats_obj = test_stats.all if hasattr(test_stats, 'all') else test_stats
         stotal = test_stats_obj.total_suite
         spass = test_stats_obj.passed_suite
         sfail = test_stats_obj.failed_suite
-        try:
-            sskip = test_stats_obj.skipped_suite
-        except:
-            sskip = 0
+        sskip = test_stats_obj.skipped_suite if hasattr(test_stats_obj, 'skipped_suite') else 0
+
 
         stats = result.statistics
-        try:
-            stats_obj = stats.total.all
-        except:
-            stats_obj = stats.total
+        stats_obj = stats.total.all if hasattr(stats.total, 'all') else stats.total
         total = stats_obj.total
         passed = stats_obj.passed
         failed = stats_obj.failed
-        try:
-            skipped = stats_obj.skipped
-        except:
-            skipped = 0
+        skipped = stats_obj.skipped if hasattr(stats_obj, 'skipped') else 0
 
         elapsedtime = datetime.datetime(1970, 1, 1) + \
             datetime.timedelta(milliseconds=result.suite.elapsedtime)
@@ -139,16 +127,9 @@ class SuiteResults(ResultVisitor):
             else:
                 suite_name = suite
 
-            try:
-                stats = suite.statistics.all
-            except:
-                stats = suite.statistics
+            stats = suite.statistics.all if hasattr(suite.statistics, 'all') else suite.statistics
             time = float("{0:.2f}".format(suite.elapsedtime / float(60000)))
-            # TODO: Update skipped when functionality implemented
-            try:
-                suite_skipped = stats.skipped
-            except:
-                suite_skipped = 0
+            suite_skipped = stats.skipped if hasattr(stats, 'skipped') else 0
             insert_into_suite_table(self.db, self.id, str(suite_name), str(suite.status),
                                     int(stats.total), int(stats.passed), int(stats.failed),
                                     float(time), int(suite_skipped))
