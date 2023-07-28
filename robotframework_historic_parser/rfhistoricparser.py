@@ -1,5 +1,6 @@
 """Tool for parsing robot framework output.xl files."""
 import os
+import json
 import datetime
 import mysql.connector
 from robot.api import ExecutionResult, ResultVisitor
@@ -17,9 +18,9 @@ def rfhistoric_parser(opts):
     # output.xml files
     output_names = []
     # support "*.xml" of output files
-    if opts.output == "*.xml":
+    if opts.output == "*.xml" or opts.output == "*.json":
         for item in os.listdir(path):
-            if os.path.isfile(item) and item.endswith('.xml'):
+            if os.path.isfile(item) and (item.endswith('.xml') or item.endswith('.json')):
                 output_names.append(item)
     else:
         for curr_name in opts.output.split(","):
@@ -31,16 +32,6 @@ def rfhistoric_parser(opts):
     if missing_files:
         # We have files missing.
         exit("output.xml file is missing: {}".format(", ".join(missing_files)))
-
-    # total = 0
-    # passed = 0
-    # failed = 0
-    # elapsedtime = 0
-    # stotal = 0
-    # spass = 0
-    # sfail = 0
-    # skipped = 0
-    # sskip = 0
 
     if opts.report_type == "RF":
         # connect to database
@@ -104,19 +95,6 @@ def rfhistoric_parser(opts):
         process_allure_report(opts)
     else:
         exit(f"report_type of {opts.report_type} is not supported.")
-
-    # # insert test results info into db
-    # result_id = insert_into_execution_table(mydb, rootdb, opts.executionname, total, passed,
-    #                                         failed, elapsedtime, stotal, spass, sfail, skipped,
-    #                                         sskip, opts.projectname)
-    #
-    # print("INFO: Capturing suite results")
-    # result.visit(SuiteResults(mydb, result_id, opts.fullsuitename))
-    # print("INFO: Capturing test results")
-    # result.visit(TestMetrics(mydb, result_id, opts.fullsuitename))
-    #
-    # print("INFO: Writing execution results")
-    # commit_and_close_db(mydb)
 
 
 # other useful methods
@@ -240,9 +218,9 @@ def insert_into_execution_table(con, ocon, name, total, passed, failed, ctime, s
     execution_rows = cursor_obj.fetchone()
     # update robothistoric.TB_PROJECT table
     root_cursor_obj.execute(
-        "UPDATE TB_PROJECT SET Last_Updated = '%s', Total_Executions = %s, Recent_Pass_Perc =%s "
+        "UPDATE TB_PROJECT SET Last_Updated = '%s', Total_Executions = %s, Recent_Pass_Perc = %s "
         "WHERE Project_Name='%s';" % (utc, execution_rows[0],
-                                      float("{0:.2f}".format((rows[1] / rows[2] * 100))),
+                                      float("{0:.2f}".format((rows[1] / rows[2] * 100))) if rows[2] != 0 else 0,
                                       projectname))
     ocon.commit()
     return str(rows[0])
@@ -256,8 +234,6 @@ def insert_into_suite_table(con, eid, name, status, total, passed, failed, durat
           "%s, %s)"
     val = (0, eid, name, status, total, passed, failed, duration, skipped)
     cursor_obj.execute(sql, val)
-    # Skip commit to avoid load on db (commit once execution is done as part of close)
-    # con.commit()
 
 
 def insert_into_test_table(con, eid, test, status, duration, msg, tags):
@@ -267,16 +243,12 @@ def insert_into_test_table(con, eid, test, status, duration, msg, tags):
           "Test_Error, Test_Tag) VALUES (%s, %s, %s, %s, %s, %s, %s)"
     val = (0, eid, test, status, duration, msg, tags)
     cursor_obj.execute(sql, val)
-    # Skip commit to avoid load on db (commit once execution is done as part of close)
-    # con.commit()
 
 
 def commit_and_close_db(db):
     """Method for closing the db"""
-    # cursorObj = db.cursor()
     db.commit()
-    # cursorObj.close()
-    # db.close()
+    db.close()
 
 
 # Allure Report Functions
@@ -284,17 +256,40 @@ def process_allure_report(opts):
     mydb = connect_to_mysql_db(opts.host, opts.port, opts.username, opts.password, opts.projectname)
     rootdb = connect_to_mysql_db(opts.host, opts.port, opts.username, opts.password, 'robothistoric')
 
-    root = ET.parse(opts.output).getroot()
+    if opts.output.endswith('.xml'):
+        root = ET.parse(opts.output).getroot()
 
-    total = root.get('total', '0')
-    passed = root.get('passed', '0')
-    failed = root.get('failed', '0') + root.get('inconclusive', '0')
-    skipped = root.get('skipped', '0')
-    elapsedtime = root.get('duration', '0')
-    stotal = 0
-    spass = 0
-    sfail = 0
-    sskip = 0
+        total = root.get('total', '0')
+        passed = root.get('passed', '0')
+        failed = root.get('failed', '0') + root.get('inconclusive', '0')
+        skipped = root.get('skipped', '0')
+        elapsedtime = root.get('duration', '0')
+        # Retrieving suite data is currently not implemented
+        stotal = 0
+        spass = 0
+        sfail = 0
+        sskip = 0
+
+    # if this is in a summary.json
+    elif opts.output.endswith('.json'):
+        with open(opts.output, 'r') as f:
+            data = json.load(f)
+
+        # Navigate to 'statistic' key
+        statistics = data.get('statistic', {})
+
+        total = statistics.get('total', '0')
+        passed = statistics.get('passed', '0')
+        failed = statistics.get('failed', '0') + statistics.get('unknown', '0')
+        skipped = statistics.get('skipped', '0')
+        elapsedtime = '0' #duration data not saved in the summary.json
+        # Retrieving suite data is currently not implemented
+        stotal = 0
+        spass = 0
+        sfail = 0
+        sskip = 0
+    else:
+        print("Invalid file type. Please provide either .xml or .json file.")
 
     # print("id:", root.get('id'))
     # print("testcasecount:", root.get('testcasecount'))

@@ -34,10 +34,10 @@ class TestFunctions(unittest.TestCase):
         mock_print.assert_called_with("Ignoring execution results...")
         self.assertEqual(result, None)
 
-    # def test_rfhistoric_parser(self):
-    #     """This test verifies that the rfhistoric parser function. """
-    #     file_path = ROOT_PATH + "/" + "empty.xml"
-    #     sys.argv[1:] = ['-o', file_path]
-    #     test_opts = parse_options()
-    #     result = rfhistoric_parser(test_opts)
-    #     print(result)
+    def test_rfhistoric_parser(self):
+        """This test verifies that the rfhistoric parser function. """
+        file_path = ROOT_PATH + "/" + "empty.xml"
+        sys.argv[1:] = ['-o', file_path]
+        test_opts = parse_options()
+        result = rfhistoric_parser(test_opts)
+        print(result)
