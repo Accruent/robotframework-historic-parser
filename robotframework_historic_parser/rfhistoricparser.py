@@ -237,6 +237,18 @@ def process_allure_report(opts):
     mydb = connect_to_mysql_db(opts.host, opts.port, opts.username, opts.password, opts.projectname)
     rootdb = connect_to_mysql_db(opts.host, opts.port, opts.username, opts.password, 'robothistoric')
 
+    total = 0
+    passed = 0
+    failed = 0
+    skipped = 0
+    elapsedtime = 0
+    # Retrieving suite data is currently not implemented
+    stotal = 0
+    spass = 0
+    sfail = 0
+    sskip = 0
+
+
     if opts.output.endswith('.xml'):
         root = ET.parse(opts.output).getroot()
 
@@ -245,11 +257,6 @@ def process_allure_report(opts):
         failed = root.get('failed', '0') + root.get('inconclusive', '0')
         skipped = root.get('skipped', '0')
         elapsedtime = root.get('duration', '0')
-        # Retrieving suite data is currently not implemented
-        stotal = 0
-        spass = 0
-        sfail = 0
-        sskip = 0
 
     # if this is in a summary.json
     elif opts.output.endswith('.json'):
@@ -263,34 +270,13 @@ def process_allure_report(opts):
         passed = statistics.get('passed', '0')
         failed = statistics.get('failed', '0') + statistics.get('unknown', '0')
         skipped = statistics.get('skipped', '0')
-        elapsedtime = '0' #duration data not saved in the summary.json
-        # Retrieving suite data is currently not implemented
-        stotal = 0
-        spass = 0
-        sfail = 0
-        sskip = 0
+        elapsedtime = '0' # duration data not saved in the summary.json
     else:
         print("Invalid file type. Please provide either .xml or .json file.")
 
-    # print("id:", root.get('id'))
-    # print("testcasecount:", root.get('testcasecount'))
-    # print("result:", root.get('result'))
-    # print("total:", total)
-    # print("passed:", root.get('passed'))
-    # print("failed:", root.get('failed'))
-    # print("inconclusive:", root.get('inconclusive'))
-    # print("skipped:", root.get('skipped'))
-    # print("asserts:", root.get('asserts'))
-    # print("engine-version:", root.get('engine-version'))
-    # print("clr-version:", root.get('clr-version'))
-    # print("start-time:", root.get('start-time'))
-    # print("end-time:", root.get('end-time'))
-    # print("duration:", root.get('duration'))
-
     # insert test results info into db
-    insert_into_execution_table(mydb, rootdb, opts.executionname, total, passed,
-                                            failed, elapsedtime, stotal, spass, sfail, skipped,
-                                            sskip, opts.projectname)
+    insert_into_execution_table(mydb, rootdb, opts.executionname, total, passed, failed, elapsedtime, stotal, spass,
+                                sfail, skipped, sskip, opts.projectname)
 
     print("INFO: Writing execution results")
     mydb.close()
