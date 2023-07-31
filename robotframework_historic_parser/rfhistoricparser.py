@@ -61,14 +61,14 @@ def rfhistoric_parser(opts):
         failed = stats_obj.failed
         skipped = stats_obj.skipped if hasattr(stats_obj, 'skipped') else 0
 
-        elapsed_time = datetime.datetime(1970, 1, 1) + \
-            datetime.timedelta(milliseconds=result.suite.elapsed_time)
-        elapsed_time = get_time_in_min(elapsed_time.strftime("%X"))
-        elapsed_time = float("{0:.2f}".format(elapsed_time))
+        elapsedtime = datetime.datetime(1970, 1, 1) + \
+            datetime.timedelta(milliseconds=result.suite.elapsedtime)
+        elapsedtime = get_time_in_min(elapsedtime.strftime("%X"))
+        elapsedtime = float("{0:.2f}".format(elapsedtime))
 
         # insert test results info into db
         result_id = insert_into_execution_table(mydb, rootdb, opts.executionname, total, passed,
-                                                failed, elapsed_time, stotal, spass, sfail, skipped,
+                                                failed, elapsedtime, stotal, spass, sfail, skipped,
                                                 sskip, opts.projectname)
 
         print("INFO: Capturing suite results")
@@ -128,7 +128,7 @@ class SuiteResults(ResultVisitor):
                 suite_name = suite
 
             stats = suite.statistics.all if hasattr(suite.statistics, 'all') else suite.statistics
-            time = float("{0:.2f}".format(suite.elapsed_time / float(60000)))
+            time = float("{0:.2f}".format(suite.elapsedtime / float(60000)))
             suite_skipped = stats.skipped if hasattr(stats, 'skipped') else 0
             insert_into_suite_table(self.db, self.id, str(suite_name), str(suite.status),
                                     int(stats.total), int(stats.passed), int(stats.failed),
@@ -150,7 +150,7 @@ class TestMetrics(ResultVisitor):
         else:
             name = str(test.parent) + " - " + str(test)
 
-        time = float("{0:.2f}".format(test.elapsed_time / float(60000)))
+        time = float("{0:.2f}".format(test.elapsedtime / float(60000)))
         error = str(test.message)
         insert_into_test_table(self.db, self.id, str(name), str(test.status), time, error,
                                str(test.tags))
@@ -241,7 +241,7 @@ def process_allure_report(opts):
     passed = 0
     failed = 0
     skipped = 0
-    elapsed_time = 0
+    elapsedtime = 0
     # Retrieving suite data is currently not implemented
     stotal = 0
     spass = 0
@@ -255,7 +255,7 @@ def process_allure_report(opts):
         passed = root.get('passed', '0')
         failed = root.get('failed', '0') + root.get('inconclusive', '0')
         skipped = root.get('skipped', '0')
-        elapsed_time = root.get('duration', '0')
+        elapsedtime = root.get('duration', '0')
 
     # if this is in a summary.json
     elif opts.output.endswith('.json'):
@@ -269,12 +269,12 @@ def process_allure_report(opts):
         passed = statistics.get('passed', '0')
         failed = statistics.get('failed', '0') + statistics.get('unknown', '0')
         skipped = statistics.get('skipped', '0')
-        elapsed_time = '0'  # duration data not saved in the summary.json
+        elapsedtime = '0' # duration data not saved in the summary.json
     else:
         print("Invalid file type. Please provide either .xml or .json file.")
 
     # insert test results info into db
-    insert_into_execution_table(mydb, rootdb, opts.executionname, total, passed, failed, elapsed_time, stotal, spass,
+    insert_into_execution_table(mydb, rootdb, opts.executionname, total, passed, failed, elapsedtime, stotal, spass,
                                 sfail, skipped, sskip, opts.projectname)
 
     print("INFO: Writing execution results")
