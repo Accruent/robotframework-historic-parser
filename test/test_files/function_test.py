@@ -3,9 +3,9 @@ import os
 import sys
 import unittest
 from unittest.mock import patch
-
+from mock import MagicMock
+import robotframework_historic_parser.rfhistoricparser
 from robotframework_historic_parser.parserargs import parse_options
-from robotframework_historic_parser.rfhistoricparser import get_time_in_min, rfhistoric_parser
 
 ROOT_PATH = os.path.abspath(os.path.dirname(__file__))
 
@@ -17,12 +17,12 @@ class TestFunctions(unittest.TestCase):
         """This test verifies that get_time_in_min returns a time in minutes. """
         test_time = '01:02:03'
         expected_result = 62.05
-        result_in_minutes = get_time_in_min(test_time)
+        result_in_minutes = robotframework_historic_parser.rfhistoricparser.get_time_in_min(test_time)
         self.assertEqual(result_in_minutes, expected_result)
 
     def test_get_time_in_min_bad_input(self):
         """This test verifies that get_time_in_min returns error if invalid input is passed. """
-        self.assertRaisesRegex(ValueError, 'not enough values to unpack', get_time_in_min, 'a')
+        self.assertRaisesRegex(ValueError, 'not enough values to unpack', robotframework_historic_parser.rfhistoricparser.get_time_in_min, 'a')
 
     @patch('builtins.print')
     def test_rfhistoric_parser_ignore_result(self, mock_print):
@@ -30,14 +30,34 @@ class TestFunctions(unittest.TestCase):
         is set to True. """
         sys.argv[1:] = ['-g', 'True']
         test_opts = parse_options()
-        result = rfhistoric_parser(test_opts)
+        result = robotframework_historic_parser.rfhistoricparser.rfhistoric_parser(test_opts)
         mock_print.assert_called_with("Ignoring execution results...")
         self.assertEqual(result, None)
 
-    # def test_rfhistoric_parser(self):
+    def test_allure_report_parser(self):
+        file_path = ROOT_PATH + "/" + "empty.xml"
+        sys.argv[1:] = ['-o', file_path]
+        test_opts = parse_options()
+        robotframework_historic_parser.rfhistoricparser.connect_to_mysql_db = MagicMock()
+        robotframework_historic_parser.rfhistoricparser.insert_into_execution_table = MagicMock()
+        robotframework_historic_parser.rfhistoricparser.process_allure_report(test_opts)
+
+    def test_rfhistoric_parser(self):
+        """This test verifies that the rfhistoric parser function. """
+        file_path = ROOT_PATH + "/" + "empty.xml"
+        sys.argv[1:] = ['-o', file_path]
+        test_opts = parse_options()
+        robotframework_historic_parser.rfhistoricparser.connect_to_mysql_db = MagicMock()
+        robotframework_historic_parser.rfhistoricparser.insert_into_execution_table = MagicMock()
+        result = robotframework_historic_parser.rfhistoricparser.rfhistoric_parser(test_opts)
+        print(result)
+
+    # def test_rfhistoric_parser_bad_output_file(self):
     #     """This test verifies that the rfhistoric parser function. """
-    #     file_path = ROOT_PATH + "/" + "empty.xml"
+    #     file_path = ROOT_PATH + "/" + "empty.somebadformat"
     #     sys.argv[1:] = ['-o', file_path]
     #     test_opts = parse_options()
-    #     result = rfhistoric_parser(test_opts)
-    #     print(result)
+    #     robotframework_historic_parser.rfhistoricparser.connect_to_mysql_db = MagicMock()
+    #     robotframework_historic_parser.rfhistoricparser.insert_into_execution_table = MagicMock()
+    #     with self.assertRaises(SystemExit):
+    #         rfhistoric_parser(test_opts)

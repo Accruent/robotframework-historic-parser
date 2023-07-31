@@ -1,8 +1,10 @@
 """Tool for parsing robot framework output.xl files."""
 import os
+import json
 import datetime
 import mysql.connector
 from robot.api import ExecutionResult, ResultVisitor
+import xml.etree.ElementTree as ET
 
 
 def rfhistoric_parser(opts):
@@ -13,12 +15,11 @@ def rfhistoric_parser(opts):
 
     path = os.path.abspath(os.path.expanduser(opts.path))
 
-    # output.xml files
     output_names = []
-    # support "*.xml" of output files
-    if opts.output == "*.xml":
+    # support "*.xml" and "*.json" output files
+    if opts.output in ["*.xml", "*.json"]:
         for item in os.listdir(path):
-            if os.path.isfile(item) and item.endswith('.xml'):
+            if os.path.isfile(item) and (item.endswith('.xml') or item.endswith('.json')):
                 output_names.append(item)
     else:
         for curr_name in opts.output.split(","):
@@ -31,62 +32,57 @@ def rfhistoric_parser(opts):
         # We have files missing.
         exit("output.xml file is missing: {}".format(", ".join(missing_files)))
 
-    # Read output.xml file
-    result = ExecutionResult(*output_names)
-    result.configure(stat_config={'suite_stat_level': 2,
-                                  'tag_stat_combine': 'tagANDanother'})
+    if opts.report_type == "RF":
+        # connect to database
+        mydb = connect_to_mysql_db(opts.host, opts.port, opts.username, opts.password, opts.projectname)
+        rootdb = connect_to_mysql_db(opts.host, opts.port, opts.username, opts.password, 'robothistoric')
 
-    print("Capturing execution results, This may take few minutes...")
+        # Read output.xml file
+        result = ExecutionResult(*output_names)
+        result.configure(stat_config={'suite_stat_level': 2,
+                                      'tag_stat_combine': 'tagANDanother'})
 
-    # connect to database
-    mydb = connect_to_mysql_db(opts.host, opts.port, opts.username, opts.password, opts.projectname)
-    rootdb = connect_to_mysql_db(opts.host, opts.port, opts.username, opts.password, 'robothistoric')
+        print("Capturing execution results, This may take few minutes...")
 
-    test_stats = SuiteStats()
-    result.visit(test_stats)
+        test_stats = SuiteStats()
+        result.visit(test_stats)
 
-    try:
-        test_stats_obj = test_stats.all
-    except:
-        test_stats_obj = test_stats
-    stotal = test_stats_obj.total_suite
-    spass = test_stats_obj.passed_suite
-    sfail = test_stats_obj.failed_suite
-    try:
-        sskip = test_stats_obj.skipped_suite
-    except:
-        sskip = 0
+        test_stats_obj = test_stats.all if hasattr(test_stats, 'all') else test_stats
+        stotal = test_stats_obj.total_suite
+        spass = test_stats_obj.passed_suite
+        sfail = test_stats_obj.failed_suite
+        sskip = test_stats_obj.skipped_suite if hasattr(test_stats_obj, 'skipped_suite') else 0
 
-    stats = result.statistics
-    try:
-        stats_obj = stats.total.all
-    except:
-        stats_obj = stats.total
-    total = stats_obj.total
-    passed = stats_obj.passed
-    failed = stats_obj.failed
-    try:
-        skipped = stats_obj.skipped
-    except:
-        skipped = 0
 
-    elapsedtime = datetime.datetime(1970, 1, 1) + \
-        datetime.timedelta(milliseconds=result.suite.elapsedtime)
-    elapsedtime = get_time_in_min(elapsedtime.strftime("%X"))
-    elapsedtime = float("{0:.2f}".format(elapsedtime))
+        stats = result.statistics
+        stats_obj = stats.total.all if hasattr(stats.total, 'all') else stats.total
+        total = stats_obj.total
+        passed = stats_obj.passed
+        failed = stats_obj.failed
+        skipped = stats_obj.skipped if hasattr(stats_obj, 'skipped') else 0
 
-    # insert test results info into db
-    result_id = insert_into_execution_table(mydb, rootdb, opts.executionname, total, passed,
-                                            failed, elapsedtime, stotal, spass, sfail, skipped,
-                                            sskip, opts.projectname)
+        elapsedtime = datetime.datetime(1970, 1, 1) + \
+            datetime.timedelta(milliseconds=result.suite.elapsedtime)
+        elapsedtime = get_time_in_min(elapsedtime.strftime("%X"))
+        elapsedtime = float("{0:.2f}".format(elapsedtime))
 
-    print("INFO: Capturing suite results")
-    result.visit(SuiteResults(mydb, result_id, opts.fullsuitename))
-    print("INFO: Capturing test results")
-    result.visit(TestMetrics(mydb, result_id, opts.fullsuitename))
+        # insert test results info into db
+        result_id = insert_into_execution_table(mydb, rootdb, opts.executionname, total, passed,
+                                                failed, elapsedtime, stotal, spass, sfail, skipped,
+                                                sskip, opts.projectname)
 
-    print("INFO: Writing execution results")
-    commit_and_close_db(mydb)
+        print("INFO: Capturing suite results")
+        result.visit(SuiteResults(mydb, result_id, opts.fullsuitename))
+        print("INFO: Capturing test results")
+        result.visit(TestMetrics(mydb, result_id, opts.fullsuitename))
+
+        print("INFO: Writing execution results")
+        commit_and_close_db(mydb)
+
+    elif opts.report_type == "Allure":
+        process_allure_report(opts)
+    else:
+        exit(f"report_type of {opts.report_type} is not supported.")
 
 
 # other useful methods
@@ -131,16 +127,9 @@ class SuiteResults(ResultVisitor):
             else:
                 suite_name = suite
 
-            try:
-                stats = suite.statistics.all
-            except:
-                stats = suite.statistics
+            stats = suite.statistics.all if hasattr(suite.statistics, 'all') else suite.statistics
             time = float("{0:.2f}".format(suite.elapsedtime / float(60000)))
-            # TODO: Update skipped when functionality implemented
-            try:
-                suite_skipped = stats.skipped
-            except:
-                suite_skipped = 0
+            suite_skipped = stats.skipped if hasattr(stats, 'skipped') else 0
             insert_into_suite_table(self.db, self.id, str(suite_name), str(suite.status),
                                     int(stats.total), int(stats.passed), int(stats.failed),
                                     float(time), int(suite_skipped))
@@ -210,9 +199,9 @@ def insert_into_execution_table(con, ocon, name, total, passed, failed, ctime, s
     execution_rows = cursor_obj.fetchone()
     # update robothistoric.TB_PROJECT table
     root_cursor_obj.execute(
-        "UPDATE TB_PROJECT SET Last_Updated = '%s', Total_Executions = %s, Recent_Pass_Perc =%s "
+        "UPDATE TB_PROJECT SET Last_Updated = '%s', Total_Executions = %s, Recent_Pass_Perc = %s "
         "WHERE Project_Name='%s';" % (utc, execution_rows[0],
-                                      float("{0:.2f}".format((rows[1] / rows[2] * 100))),
+                                      float("{0:.2f}".format((rows[1] / rows[2] * 100))) if rows[2] != 0 else 0,
                                       projectname))
     ocon.commit()
     return str(rows[0])
@@ -226,8 +215,6 @@ def insert_into_suite_table(con, eid, name, status, total, passed, failed, durat
           "%s, %s)"
     val = (0, eid, name, status, total, passed, failed, duration, skipped)
     cursor_obj.execute(sql, val)
-    # Skip commit to avoid load on db (commit once execution is done as part of close)
-    # con.commit()
 
 
 def insert_into_test_table(con, eid, test, status, duration, msg, tags):
@@ -237,13 +224,58 @@ def insert_into_test_table(con, eid, test, status, duration, msg, tags):
           "Test_Error, Test_Tag) VALUES (%s, %s, %s, %s, %s, %s, %s)"
     val = (0, eid, test, status, duration, msg, tags)
     cursor_obj.execute(sql, val)
-    # Skip commit to avoid load on db (commit once execution is done as part of close)
-    # con.commit()
 
 
 def commit_and_close_db(db):
     """Method for closing the db"""
-    # cursorObj = db.cursor()
     db.commit()
-    # cursorObj.close()
-    # db.close()
+    db.close()
+
+
+# Allure Report Functions
+def process_allure_report(opts):
+    mydb = connect_to_mysql_db(opts.host, opts.port, opts.username, opts.password, opts.projectname)
+    rootdb = connect_to_mysql_db(opts.host, opts.port, opts.username, opts.password, 'robothistoric')
+
+    total = 0
+    passed = 0
+    failed = 0
+    skipped = 0
+    elapsedtime = 0
+    # Retrieving suite data is currently not implemented
+    stotal = 0
+    spass = 0
+    sfail = 0
+    sskip = 0
+
+    if opts.output.endswith('.xml'):
+        root = ET.parse(opts.output).getroot()
+
+        total = root.get('total', '0')
+        passed = root.get('passed', '0')
+        failed = root.get('failed', '0') + root.get('inconclusive', '0')
+        skipped = root.get('skipped', '0')
+        elapsedtime = root.get('duration', '0')
+
+    # if this is in a summary.json
+    elif opts.output.endswith('.json'):
+        with open(opts.output, 'r') as f:
+            data = json.load(f)
+
+        # Navigate to 'statistic' key
+        statistics = data.get('statistic', {})
+
+        total = statistics.get('total', '0')
+        passed = statistics.get('passed', '0')
+        failed = statistics.get('failed', '0') + statistics.get('unknown', '0')
+        skipped = statistics.get('skipped', '0')
+        elapsedtime = '0' # duration data not saved in the summary.json
+    else:
+        print("Invalid file type. Please provide either .xml or .json file.")
+
+    # insert test results info into db
+    insert_into_execution_table(mydb, rootdb, opts.executionname, total, passed, failed, elapsedtime, stotal, spass,
+                                sfail, skipped, sskip, opts.projectname)
+
+    print("INFO: Writing execution results")
+    mydb.close()
