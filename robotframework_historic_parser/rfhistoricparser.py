@@ -253,7 +253,7 @@ def process_allure_report(opts):
 
         total = root.get('total', '0')
         passed = root.get('passed', '0')
-        failed = root.get('failed', '0') + root.get('inconclusive', '0')
+        failed = int(root.get('failed', '0')) + int(root.get('inconclusive', '0'))
         skipped = root.get('skipped', '0')
         elapsedtime = root.get('duration', '0')
 
@@ -267,7 +267,7 @@ def process_allure_report(opts):
 
         total = statistics.get('total', '0')
         passed = statistics.get('passed', '0')
-        failed = statistics.get('failed', '0') + statistics.get('unknown', '0')
+        failed = int(statistics.get('failed', '0')) + int(statistics.get('unknown', '0'))
         skipped = statistics.get('skipped', '0')
         elapsedtime = '0' # duration data not saved in the summary.json
     else:
