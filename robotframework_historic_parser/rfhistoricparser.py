@@ -1,5 +1,6 @@
 """Tool for parsing robot framework output.xl files."""
 import os
+import re
 import json
 import datetime
 import mysql.connector
@@ -151,7 +152,7 @@ class TestMetrics(ResultVisitor):
             name = str(test.parent) + " - " + str(test)
 
         time = float("{0:.2f}".format(test.elapsedtime / float(60000)))
-        error = str(test.message)
+        error = remove_special_characters(str(test.message))
         insert_into_test_table(self.db, self.id, str(name), str(test.status), time, error,
                                str(test.tags))
 
@@ -279,3 +280,7 @@ def process_allure_report(opts):
 
     print("INFO: Writing execution results")
     mydb.close()
+
+
+def remove_special_characters(string):
+    return re.sub(r'[^a-zA-Z0-9 ]', '', string)
