@@ -80,8 +80,10 @@ def rfhistoric_parser(opts):
         print("INFO: Writing execution results")
         commit_and_close_db(mydb)
 
-    elif opts.report_type == "Allure":
+    elif opts.report_type.lower() == "allure":
         process_allure_report(opts)
+    elif opts.report_type.lower() == "junit":
+        process_junit_report(opts)
     else:
         exit(f"report_type of {opts.report_type} is not supported.")
 
@@ -273,6 +275,35 @@ def process_allure_report(opts):
         elapsedtime = '0' # duration data not saved in the summary.json
     else:
         print("Invalid file type. Please provide either .xml or .json file.")
+
+    # insert test results info into db
+    insert_into_execution_table(mydb, rootdb, opts.executionname, total, passed, failed, elapsedtime, stotal, spass,
+                                sfail, skipped, sskip, opts.projectname)
+
+    print("INFO: Writing execution results")
+    mydb.close()
+
+
+# JUnit Report Functions
+def process_junit_report(opts):
+    mydb = connect_to_mysql_db(opts.host, opts.port, opts.username, opts.password, opts.projectname)
+    rootdb = connect_to_mysql_db(opts.host, opts.port, opts.username, opts.password, 'robothistoric')
+
+    # Retrieving suite data is currently not implemented
+    stotal = 0
+    spass = 0
+    sfail = 0
+    sskip = 0
+
+    root = ET.parse(opts.output).getroot()
+    testsuite = root.find('testsuite')
+
+    total = int(testsuite.get('tests', '0'))
+    failed = int(testsuite.get('failures', '0')) + int(testsuite.get('errors', '0'))
+    skipped = int(testsuite.get('skipped', '0'))
+    passed = total - failed - skipped
+    elapsedtime = float(testsuite.get('time', '0'))
+
 
     # insert test results info into db
     insert_into_execution_table(mydb, rootdb, opts.executionname, total, passed, failed, elapsedtime, stotal, spass,
