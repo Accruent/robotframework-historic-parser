@@ -84,6 +84,8 @@ def rfhistoric_parser(opts):
         process_allure_report(opts)
     elif opts.report_type.lower() == "junit":
         process_junit_report(opts)
+    elif opts.report_type.lower() == "statistics":
+        process_statistics_report(opts)
     else:
         exit(f"report_type of {opts.report_type} is not supported.")
 
@@ -310,6 +312,39 @@ def process_junit_report(opts):
                                 sfail, skipped, sskip, opts.projectname)
 
     print("INFO: Writing execution results")
+    mydb.close()
+
+
+def process_statistics_report(opts):
+    mydb = connect_to_mysql_db(opts.host, opts.port, opts.username, opts.password, opts.projectname)
+    rootdb = connect_to_mysql_db(opts.host, opts.port, opts.username, opts.password, 'robothistoric')
+
+    # Initialize counts
+    passed_count = 0
+    failed_count = 0
+    total_count = 0
+
+    if opts.output.endswith('.json'):
+        with open(opts.output, 'r') as f:
+            data = json.load(f)
+
+            # Iterate over properties and extract relevant counts
+            for prop in data.get('property', []):
+                if prop['name'] == 'PassedTestCount':
+                    passed_count = int(prop['value'])
+                elif prop['name'] == 'FailedTestCount':
+                    failed_count = int(prop['value'])
+                elif prop['name'] == 'TotalTestCount':
+                    total_count = int(prop['value'])
+
+    else:
+        print("Invalid file type. Please provide a .json file.")
+        return
+
+    # insert test results info into db (adjust this part as needed)
+    insert_into_execution_table(mydb, rootdb, opts.executionname, total_count, passed_count, failed_count, 0, 0, 0, 0, 0, 0, opts.projectname)
+
+    print("INFO: Writing statistics results")
     mydb.close()
 
 
