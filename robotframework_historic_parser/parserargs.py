@@ -80,7 +80,7 @@ def parse_options():
         '--report_type',
         dest='report_type',
         default="RF",
-        help="Sets the report type to import, defaults to RF. Other options: Allure, JUnit"
+        help="Sets the report type to import, defaults to RF. Other options: Allure, JUnit, Statistics"
     )
 
     return parser.parse_args()
