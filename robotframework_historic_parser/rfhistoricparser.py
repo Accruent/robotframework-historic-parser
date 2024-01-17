@@ -1,4 +1,4 @@
-"""Tool for parsing robot framework output.xl files."""
+"""Tool for parsing robot framework output.xml files."""
 import os
 import re
 import json
@@ -131,6 +131,11 @@ class SuiteResults(ResultVisitor):
                 suite_name = suite.longname
             else:
                 suite_name = suite
+                suite_name = str(suite_name)
+                # Check for rf7
+                check_string = "robot.result.TestSuite(name='"
+                if check_string in suite_name:
+                    suite_name = suite_name.split(check_string)[1].split("')")[0]
 
             stats = suite.statistics.all if hasattr(suite.statistics, 'all') else suite.statistics
             time = float("{0:.2f}".format(suite.elapsedtime / float(60000)))
@@ -154,6 +159,10 @@ class TestMetrics(ResultVisitor):
             name = str(full_suite_name[0]) + " - " + str(test)
         else:
             name = str(test.parent) + " - " + str(test)
+            # Check for rf7
+            check_string = "TestCase(name='"
+            if check_string in name:
+                name = name.split(check_string)[1].split("')")[0]
 
         time = float("{0:.2f}".format(test.elapsedtime / float(60000)))
         error = remove_special_characters(str(test.message))
