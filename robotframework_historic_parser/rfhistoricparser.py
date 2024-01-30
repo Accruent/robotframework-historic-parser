@@ -286,6 +286,7 @@ def process_allure_report(opts):
         elapsedtime = '0' # duration data not saved in the summary.json
     else:
         print("Invalid file type. Please provide either .xml or .json file.")
+        return
 
     # insert test results info into db
     insert_into_execution_table(mydb, rootdb, opts.executionname, total, passed, failed, elapsedtime, stotal, spass,

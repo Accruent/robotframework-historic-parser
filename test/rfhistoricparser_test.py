@@ -11,6 +11,7 @@ from robotframework_historic_parser.rfhistoricparser import (
     process_statistics_report,
     insert_into_execution_table,
     process_junit_report,
+    process_allure_report,
 )
 from robotframework_historic_parser.parserargs import parse_options
 
@@ -66,6 +67,89 @@ class TestRFHistoricParser(unittest.TestCase):
         self.assertIn(
             "output.xml file is missing: test1.xml, test2.xml", str(cm.exception)
         )
+
+    @patch("mysql.connector.connect")
+    @patch(
+        "robotframework_historic_parser.rfhistoricparser.insert_into_execution_table"
+    )
+    @patch("builtins.print")
+    @patch("xml.etree.ElementTree.parse")
+    def test_process_allure_report_xml(
+        self,
+        mock_parse,
+        mock_print,
+        mock_insert_into_execution_table,
+        mock_connect_to_mysql_db,
+    ):
+        opts = Mock()
+        opts.output = "sample.xml"
+        root = Mock()
+        root.get.return_value = 1
+        mock_parse.return_value.getroot.return_value = root
+
+        process_allure_report(opts)
+
+        mock_print.assert_called_with("INFO: Writing execution results")
+        mock_connect_to_mysql_db.return_value.close.assert_called_once()
+
+    @patch("mysql.connector.connect")
+    @patch(
+        "robotframework_historic_parser.rfhistoricparser.insert_into_execution_table"
+    )
+    @patch("builtins.print")
+    @patch("json.load")
+    @patch("builtins.open", new_callable=unittest.mock.mock_open)
+    def test_process_allure_report_json(
+        self,
+        mock_open,
+        mock_load,
+        mock_print,
+        mock_insert_into_execution_table,
+        mock_connect_to_mysql_db,
+    ):
+        opts = Mock()
+        opts.output = "sample.json"
+        data = {
+            "statistic": {
+                "total": 10,
+                "passed": 1,
+                "failed": 2,
+                "unknown": 3,
+                "skipped": 4,
+            }
+        }
+        mock_load.return_value = data
+        mock_open.return_value.read.return_value = json.dumps(data)
+
+        process_allure_report(opts)
+
+        mock_insert_into_execution_table.assert_called_once_with(
+            mock_connect_to_mysql_db.return_value,
+            mock_connect_to_mysql_db.return_value,
+            opts.executionname,
+            10,
+            1,
+            5,
+            "0",
+            0,
+            0,
+            0,
+            4,
+            0,
+            opts.projectname,
+        )
+        mock_print.assert_called_with("INFO: Writing execution results")
+        mock_connect_to_mysql_db.return_value.close.assert_called_once()
+
+    @patch('builtins.print')
+    def test_process_allure_report_invalid_file_type(self, mock_print):
+        opts = Mock()
+        opts.output = 'sample.txt'
+
+        process_allure_report(opts)
+
+        mock_print.assert_called_with("Invalid file type. Please provide either .xml or .json file.")
+
 
     @patch("mysql.connector.connect")
     @patch(
