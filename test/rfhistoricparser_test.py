@@ -10,6 +10,7 @@ from robotframework_historic_parser.rfhistoricparser import (
     remove_special_characters,
     process_statistics_report,
     insert_into_execution_table,
+    process_junit_report,
 )
 from robotframework_historic_parser.parserargs import parse_options
 
@@ -66,6 +67,55 @@ class TestRFHistoricParser(unittest.TestCase):
             "output.xml file is missing: test1.xml, test2.xml", str(cm.exception)
         )
 
+    @patch("mysql.connector.connect")
+    @patch(
+        "robotframework_historic_parser.rfhistoricparser.insert_into_execution_table"
+    )
+    @patch("xml.etree.ElementTree.parse")
+    @patch("builtins.print")
+    @patch(
+        "builtins.open",
+        unittest.mock.mock_open(
+            read_data='<testsuite tests="5" failures="2" errors="1" skipped="1" time="2.5"></testsuite>'
+        ),
+    )
+    def test_process_junit_report(self, mock_print, mock_parse, mock_insert, mock_conn):
+        # Mock the database connection function
+        mock_cursor = mock.Mock()
+        mock_conn.cursor.return_value = mock_cursor
+
+        # Set up the opts object
+        opts = MockOpts(
+            output="test.json",
+            executionname="test_execution",
+            host="localhost",
+            port=3306,
+            username="superuser",
+            password="passw0rd",
+            projectname="test",
+        )
+
+        process_junit_report(opts)
+
+        mock_insert.assert_called_with(
+            mock_conn.return_value,
+            mock_conn.return_value,
+            "test_execution",
+            1,
+            -2,
+            2,
+            1.0,
+            0,
+            0,
+            0,
+            1,
+            0,
+            "test",
+        )
+        mock_conn.return_value.close.assert_called_once()
+        mock_print.assert_called_with("INFO: Writing execution results")
+        self.assertEqual(1, mock_insert.call_count)
+
     @patch(
         "robotframework_historic_parser.rfhistoricparser.insert_into_execution_table"
     )
@@ -108,8 +158,8 @@ class TestRFHistoricParser(unittest.TestCase):
         self.assertEqual(1, mock_insert.call_count)
 
     @patch("builtins.print")
-    def test_process_statistics_report_invalid_json(self,  mock_print):
-        opts = MagicMock(output='mock_output.txt')
+    def test_process_statistics_report_invalid_json(self, mock_print):
+        opts = MagicMock(output="mock_output.txt")
 
         # Call the function to test
         process_statistics_report(opts)
