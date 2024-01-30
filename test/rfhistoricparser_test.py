@@ -3,7 +3,7 @@ import json
 import sys
 import unittest
 from unittest import mock
-from unittest.mock import patch, Mock, MagicMock
+from unittest.mock import patch, Mock, MagicMock, call
 from robotframework_historic_parser.rfhistoricparser import (
     get_time_in_min,
     rfhistoric_parser,
@@ -12,6 +12,9 @@ from robotframework_historic_parser.rfhistoricparser import (
     insert_into_execution_table,
     process_junit_report,
     process_allure_report,
+    commit_and_close_db,
+    ExecutionResult,
+    datetime,
 )
 from robotframework_historic_parser.parserargs import parse_options
 
@@ -67,6 +70,138 @@ class TestRFHistoricParser(unittest.TestCase):
         self.assertIn(
             "output.xml file is missing: test1.xml, test2.xml", str(cm.exception)
         )
+
+    @patch("mysql.connector.connect")
+    @patch("robotframework_historic_parser.rfhistoricparser.ExecutionResult")
+    @patch(
+        "robotframework_historic_parser.rfhistoricparser.insert_into_execution_table"
+    )
+    @patch("robotframework_historic_parser.rfhistoricparser.commit_and_close_db")
+    @patch("builtins.print")
+    @patch("os.listdir", return_value=["output.xml"])
+    @patch(
+        "os.path.exists", return_value=True
+    )  # Mocking os.path.exists to always return True
+    def test_rfhistoric_parser_rf(
+        self,
+        mock_exists,
+        mock_listdir,
+        mock_print,
+        mock_commit_and_close_db,
+        mock_insert_into_execution_table,
+        mock_ExecutionResult,
+        mock_connect_to_mysql_db,
+    ):
+        opts = Mock()
+        opts.ignoreresult = "False"
+        opts.path = "/some/path"
+        opts.output = "*.xml"
+        opts.report_type = "RF"
+        opts.host = "test_host"
+        opts.port = "test_port"
+        opts.username = "test_username"
+        opts.password = "test_password"
+        opts.projectname = "test_project"
+        opts.executionname = "test_executionname"
+        opts.fullsuitename = "test_fullsuitename"
+
+        mock_result = mock_ExecutionResult.return_value
+        mock_result.suite.elapsedtime = 1000  # assuming elapsed time in milliseconds
+        mock_test_stats = Mock()
+        mock_test_stats.total_suite = 10
+        mock_test_stats.passed_suite = 7
+        mock_test_stats.failed_suite = 2
+        mock_test_stats.skipped_suite = 1
+        mock_result.statistics.total.all = mock_test_stats
+
+        with patch(
+            "robotframework_historic_parser.rfhistoricparser.datetime"
+        ) as mock_datetime, patch(
+            "robotframework_historic_parser.rfhistoricparser.get_time_in_min"
+        ) as mock_gettime:
+            mock_datetime.timedelta.return_value = Mock()
+            mock_gettime.return_value = 10
+            rfhistoric_parser(opts)
+
+        mock_ExecutionResult.assert_called_once_with()
+        mock_result.configure.assert_called_once_with(
+            stat_config={"suite_stat_level": 2, "tag_stat_combine": "tagANDanother"}
+        )
+        self.assertEqual(3, mock_result.visit.call_count)
+        mock_commit_and_close_db.assert_called_once()
+
+        expected_calls = [
+            call("INFO: Capturing suite results"),
+            call("INFO: Capturing test results"),
+            call("INFO: Writing execution results"),
+        ]
+
+        mock_print.assert_has_calls(expected_calls, any_order=True)
+
+    @patch("robotframework_historic_parser.rfhistoricparser.process_allure_report")
+    @patch("os.listdir", return_value=["output.xml"])
+    @patch("builtins.exit")
+    def test_rfhistoric_parser_allure(
+        self, mock_exit, mock_list, mock_process_allure_report
+    ):
+
+        opts = Mock()
+        opts.report_type = "Allure"
+        opts.path = "/some/path"
+        opts.output = "*.xml"
+
+        with patch("builtins.print"):
+            rfhistoric_parser(opts)
+
+        mock_process_allure_report.assert_called_once_with(opts)
+        mock_exit.assert_not_called()
+
+    @patch("robotframework_historic_parser.rfhistoricparser.process_allure_report")
+    @patch("builtins.exit")
+    @patch("os.path.exists", return_value=True)
+    def test_rfhistoric_parser_allure(
+        self, mock_path, mock_exit, mock_process_allure_report
+    ):
+        opts = Mock()
+        opts.report_type = "Allure"
+        opts.path = "/some/path"
+        opts.output = "sample.txt"
+
+        with patch("builtins.print"):
+            rfhistoric_parser(opts)
+
+        # Verify that process_allure_report was called with the correct arguments
+        mock_process_allure_report.assert_called_once_with(opts)
+
+        # Verify that exit was not called
+        mock_exit.assert_not_called()
+
+    @patch("robotframework_historic_parser.rfhistoricparser.process_statistics_report")
+    @patch("builtins.exit")
+    @patch("os.path.exists", return_value=True)
+    def test_rfhistoric_parser_statistics(
+        self, mock_path, mock_exit, mock_process_statistics_report
+    ):
+        opts = Mock()
+        opts.report_type = "Statistics"
+        opts.path = "/some/path"
+        opts.output = "sample.txt"
+
+        rfhistoric_parser(opts)
+
+        mock_process_statistics_report.assert_called_once_with(opts)
+        mock_exit.assert_not_called()
+
+    @patch("builtins.exit")
+    def test_rfhistoric_parser_invalid_report_type(self, mock_exit):
+        opts = Mock()
+        opts.report_type = "InvalidType"
+        opts.path = "/some/path"
+        opts.output = "sample.txt"
+
+        rfhistoric_parser(opts)
+
+        mock_exit.assert_called_with("report_type of InvalidType is not supported.")
 
     @patch("mysql.connector.connect")
     @patch(
@@ -141,15 +276,16 @@ class TestRFHistoricParser(unittest.TestCase):
         mock_print.assert_called_with("INFO: Writing execution results")
         mock_connect_to_mysql_db.return_value.close.assert_called_once()
 
-    @patch('builtins.print')
+    @patch("builtins.print")
     def test_process_allure_report_invalid_file_type(self, mock_print):
         opts = Mock()
-        opts.output = 'sample.txt'
+        opts.output = "sample.txt"
 
         process_allure_report(opts)
 
-        mock_print.assert_called_with("Invalid file type. Please provide either .xml or .json file.")
-
+        mock_print.assert_called_with(
+            "Invalid file type. Please provide either .xml or .json file."
+        )
 
     @patch("mysql.connector.connect")
     @patch(
