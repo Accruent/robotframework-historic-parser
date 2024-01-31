@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<robot generator="Robot 6.1.1 (Python 3.11.6 on win32)" generated="20240131 07:51:49.503" rpa="false" schemaversion="4">
+<suite id="s1" name="RFH Parser Test" source="C:\Git\automation-framework-template\Projects\RFH_Parser_Test.robot">
+<test id="s1-t1" name="Passing Test Case" line="7">
+<kw name="Log To Console" library="BuiltIn">
+<arg>Hello World!</arg>
+<doc>Logs the given message to the console.</doc>
+<status status="PASS" starttime="20240131 07:51:49.667" endtime="20240131 07:51:49.667"/>
+</kw>
+<status status="PASS" starttime="20240131 07:51:49.667" endtime="20240131 07:51:49.667"/>
+</test>
+<test id="s1-t2" name="Failing Test Case" line="10">
+<kw name="Fail" library="BuiltIn">
+<arg>Goodbye World!</arg>
+<doc>Fails the test with the given message and optionally alters its tags.</doc>
+<msg timestamp="20240131 07:51:49.668" level="FAIL">Goodbye World!</msg>
+<status status="FAIL" starttime="20240131 07:51:49.668" endtime="20240131 07:51:49.668"/>
+</kw>
+<status status="FAIL" starttime="20240131 07:51:49.668" endtime="20240131 07:51:49.668">Goodbye World!</status>
+</test>
+<test id="s1-t3" name="Skipped Test Case" line="13">
+<kw name="Skip" library="BuiltIn">
+<arg>Skip this world!</arg>
+<doc>Skips the rest of the current test.</doc>
+<msg timestamp="20240131 07:51:49.669" level="SKIP">Skip this world!</msg>
+<status status="SKIP" starttime="20240131 07:51:49.668" endtime="20240131 07:51:49.669"/>
+</kw>
+<status status="SKIP" starttime="20240131 07:51:49.668" endtime="20240131 07:51:49.669">Skip this world!</status>
+</test>
+<doc>The purpose of this test suite is to provide an ouput.xml file with passing, failed, and
+skipped tests for use in verifying / unit tests of rfh parser.</doc>
+<status status="FAIL" starttime="20240131 07:51:49.507" endtime="20240131 07:51:49.669"/>
+</suite>
+<statistics>
+<total>
+<stat pass="1" fail="1" skip="1">All Tests</stat>
+</total>
+<tag>
+</tag>
+<suite>
+<stat pass="1" fail="1" skip="1" id="s1" name="RFH Parser Test">RFH Parser Test</stat>
+</suite>
+</statistics>
+<errors>
+</errors>
+</robot>

@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<robot generator="Robot 7.0 (Python 3.11.6 on win32)" generated="2024-01-31T07:40:17.000914" rpa="false" schemaversion="5">
+<suite id="s1" name="RFH Parser Test" source="C:\Git\automation-framework-template\Projects\RFH_Parser_Test.robot">
+<test id="s1-t1" name="Passing Test Case" line="7">
+<kw name="Log To Console" owner="BuiltIn">
+<arg>Hello World!</arg>
+<doc>Logs the given message to the console.</doc>
+<status status="PASS" start="2024-01-31T07:40:17.060853" elapsed="0.000000"/>
+</kw>
+<status status="PASS" start="2024-01-31T07:40:17.059683" elapsed="0.001170"/>
+</test>
+<test id="s1-t2" name="Failing Test Case" line="10">
+<kw name="Fail" owner="BuiltIn">
+<msg time="2024-01-31T07:40:17.061685" level="FAIL">Goodbye World!</msg>
+<arg>Goodbye World!</arg>
+<doc>Fails the test with the given message and optionally alters its tags.</doc>
+<status status="FAIL" start="2024-01-31T07:40:17.061685" elapsed="0.000000">Goodbye World!</status>
+</kw>
+<status status="FAIL" start="2024-01-31T07:40:17.060853" elapsed="0.000832">Goodbye World!</status>
+</test>
+<test id="s1-t3" name="Skipped Test Case" line="13">
+<kw name="Skip" owner="BuiltIn">
+<msg time="2024-01-31T07:40:17.062698" level="SKIP">Skip this world!</msg>
+<arg>Skip this world!</arg>
+<doc>Skips the rest of the current test.</doc>
+<status status="SKIP" start="2024-01-31T07:40:17.061685" elapsed="0.001013">Skip this world!</status>
+</kw>
+<status status="SKIP" start="2024-01-31T07:40:17.061685" elapsed="0.001013">Skip this world!</status>
+</test>
+<doc>The purpose of this test suite is to provide an ouput.xml file with passing, failed, and
+skipped tests for use in verifying / unit tests of rfh parser.</doc>
+<status status="FAIL" start="2024-01-31T07:40:17.004428" elapsed="0.058270"/>
+</suite>
+<statistics>
+<total>
+<stat pass="1" fail="1" skip="1">All Tests</stat>
+</total>
+<tag>
+</tag>
+<suite>
+<stat pass="1" fail="1" skip="1" id="s1" name="RFH Parser Test">RFH Parser Test</stat>
+</suite>
+</statistics>
+<errors>
+</errors>
+</robot>
