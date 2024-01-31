@@ -1,5 +1,6 @@
 """Unit tests for functions used in Robot Framework Historic Parser rfhistoricparser"""
 import json
+import os
 import sys
 import unittest
 from unittest import mock
@@ -18,6 +19,7 @@ from robotframework_historic_parser.rfhistoricparser import (
 )
 from robotframework_historic_parser.parserargs import parse_options
 
+ROOT_PATH = os.path.abspath(os.path.dirname(__file__))
 
 class MockOpts:
     def __init__(self, **kwargs):
@@ -76,9 +78,10 @@ class TestRFHistoricParser(unittest.TestCase):
         "robotframework_historic_parser.rfhistoricparser.insert_into_execution_table"
     )
     def test_rfhistoric_parser_rf7(self, mock_insert, mock_conn):
+        file_path = ROOT_PATH + "/" + "test_files/output_test_rf7.xml"
         opts = MockOpts(
             ignoreresult="False",
-            output="test\\test_files\\output_test_rf7.xml",
+            output=file_path,
             path="",
             report_type="RF",
             host="localhost",
@@ -109,9 +112,10 @@ class TestRFHistoricParser(unittest.TestCase):
         "robotframework_historic_parser.rfhistoricparser.insert_into_execution_table"
     )
     def test_rfhistoric_parser_rf6(self, mock_insert, mock_conn):
+        file_path = ROOT_PATH + "/" + "test_files/output_test_rf6.xml"
         opts = MockOpts(
             ignoreresult="False",
-            output="test\\test_files\\output_test_rf6.xml",
+            output=file_path,
             path="",
             report_type="RF",
             host="localhost",
