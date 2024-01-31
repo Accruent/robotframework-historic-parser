@@ -72,6 +72,72 @@ class TestRFHistoricParser(unittest.TestCase):
         )
 
     @patch("mysql.connector.connect")
+    @patch(
+        "robotframework_historic_parser.rfhistoricparser.insert_into_execution_table"
+    )
+    def test_rfhistoric_parser_rf7(self, mock_insert, mock_conn):
+        opts = MockOpts(
+            ignoreresult="False",
+            output="test\\test_files\\output_test_rf7.xml",
+            path="",
+            report_type="RF",
+            host="localhost",
+            port=3306,
+            username="superuser",
+            password="passw0rd",
+            projectname="test",
+            executionname="test_executionname",
+            fullsuitename="test_fullsuitename",
+        )
+        rfhistoric_parser(opts)
+        assert mock_insert.call_args.args[2:] == (
+            "test_executionname",
+            3,
+            1,
+            1,
+            0.0,
+            1,
+            0,
+            1,
+            1,
+            0,
+            "test",
+        )
+
+    @patch("mysql.connector.connect")
+    @patch(
+        "robotframework_historic_parser.rfhistoricparser.insert_into_execution_table"
+    )
+    def test_rfhistoric_parser_rf6(self, mock_insert, mock_conn):
+        opts = MockOpts(
+            ignoreresult="False",
+            output="test\\test_files\\output_test_rf6.xml",
+            path="",
+            report_type="RF",
+            host="localhost",
+            port=3306,
+            username="superuser",
+            password="passw0rd",
+            projectname="test",
+            executionname="test_executionname",
+            fullsuitename="test_fullsuitename",
+        )
+        rfhistoric_parser(opts)
+        assert mock_insert.call_args.args[2:] == (
+            "test_executionname",
+            3,
+            1,
+            1,
+            0.0,
+            1,
+            0,
+            1,
+            1,
+            0,
+            "test",
+        )
+
+    @patch("mysql.connector.connect")
     @patch("robotframework_historic_parser.rfhistoricparser.ExecutionResult")
     @patch(
         "robotframework_historic_parser.rfhistoricparser.insert_into_execution_table"
