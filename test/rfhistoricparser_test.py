@@ -424,7 +424,8 @@ class TestRFHistoricParser(unittest.TestCase):
             "property": [
                 {"name": "PassedTestCount", "value": "10"},
                 {"name": "FailedTestCount", "value": "2"},
-                {"name": "TotalTestCount", "value": "12"},
+                {"name": "FailedTestCount", "value": "3"},
+                {"name": "TotalTestCount", "value": "15"},
             ]
         }
         mock_open.return_value.read.return_value = json.dumps(mock_data)
