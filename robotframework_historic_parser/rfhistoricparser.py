@@ -158,11 +158,17 @@ class TestMetrics(ResultVisitor):
             full_suite_name = test.longname.split("." + test.name)
             name = str(full_suite_name[0]) + " - " + str(test)
         else:
-            name = str(test.parent) + " - " + str(test)
-            # Check for rf7
-            check_string = "TestCase(name='"
-            if check_string in name:
-                name = name.split(check_string)[1].split("')")[0]
+            suite_name = str(test.parent)
+            # handle for rf7.0 + formatting
+            suite_check_string = "robot.result.TestSuite(name='"
+            if suite_check_string in suite_name:
+                suite_name = suite_name.split(suite_check_string)[1].split("')")[0]
+            test_name = str(test)
+            # handle for rf7.0 + formatting
+            test_check_string = "robot.result.TestCase(name='"
+            if test_check_string in test_name:
+                test_name = test_name.split(test_check_string)[1].split("')")[0]
+            name = suite_name + " - " + test_name
 
         time = float("{0:.2f}".format(test.elapsedtime / float(60000)))
         error = remove_special_characters(str(test.message))
