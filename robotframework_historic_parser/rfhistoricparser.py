@@ -338,6 +338,7 @@ def process_statistics_report(opts):
     # Initialize counts
     passed_count = 0
     failed_count = 0
+    skipped_count = 0
     total_count = 0
 
     if opts.output.endswith('.json'):
@@ -350,6 +351,8 @@ def process_statistics_report(opts):
                     passed_count = int(prop['value'])
                 elif prop['name'] == 'FailedTestCount':
                     failed_count = int(prop['value'])
+                elif prop['name'] == 'SkippedTestCount':
+                    skipped_count = int(prop['value'])
                 elif prop['name'] == 'TotalTestCount':
                     total_count = int(prop['value'])
 
@@ -358,7 +361,7 @@ def process_statistics_report(opts):
         return
 
     # insert test results info into db (adjust this part as needed)
-    insert_into_execution_table(mydb, rootdb, opts.executionname, total_count, passed_count, failed_count, 0, 0, 0, 0, 0, 0, opts.projectname)
+    insert_into_execution_table(mydb, rootdb, opts.executionname, total_count, passed_count, failed_count, 0, 0, 0, 0, skipped_count, 0, opts.projectname)
 
     print("INFO: Writing statistics results")
     mydb.close()
