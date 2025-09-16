@@ -273,8 +273,8 @@ def process_allure_report(opts):
 
         total = root.get('total', '0')
         passed = root.get('passed', '0')
-        failed = int(root.get('failed', '0')) + int(root.get('inconclusive', '0'))
-        skipped = root.get('skipped', '0')
+        failed = root.get('failed', '0')
+        skipped = int(root.get('skipped', '0')) + int(root.get('inconclusive', '0'))
         elapsedtime = root.get('duration', '0')
 
     # if this is in a summary.json
