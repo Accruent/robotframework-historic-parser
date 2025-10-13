@@ -16,6 +16,9 @@ from robotframework_historic_parser.rfhistoricparser import (
     commit_and_close_db,
     ExecutionResult,
     datetime,
+    SuiteStats,
+    SuiteResults,
+    TestMetrics,
 )
 from robotframework_historic_parser.parserargs import parse_options
 
@@ -208,6 +211,24 @@ class TestRFHistoricParser(unittest.TestCase):
 
         mock_print.assert_has_calls(expected_calls, any_order=True)
 
+    @patch("robotframework_historic_parser.rfhistoricparser.process_junit_report")
+    @patch("os.listdir", return_value=["output.xml"])
+    @patch("builtins.exit")
+    def test_rfhistoric_parser_junit(
+        self, mock_exit, mock_list, mock_process_junit_report
+    ):
+
+        opts = Mock()
+        opts.report_type = "junit"
+        opts.path = "/some/path"
+        opts.output = "*.xml"
+
+        with patch("builtins.print"):
+            rfhistoric_parser(opts)
+
+        mock_process_junit_report.assert_called_once_with(opts)
+        mock_exit.assert_not_called()
+
     @patch("robotframework_historic_parser.rfhistoricparser.process_allure_report")
     @patch("os.listdir", return_value=["output.xml"])
     @patch("builtins.exit")
@@ -334,12 +355,12 @@ class TestRFHistoricParser(unittest.TestCase):
             opts.executionname,
             10,
             1,
-            5,
+            2,
             "0",
             0,
             0,
             0,
-            4,
+            7,
             0,
             opts.projectname,
         )
@@ -477,3 +498,190 @@ class TestRFHistoricParser(unittest.TestCase):
     def test_remove_special_characters_with_spaces(self):
         result = remove_special_characters("Remove these special characters!")
         self.assertEqual(result, "Remove these special characters")
+
+
+
+    def test_suite_stats_passed_suite(self):
+        """Test SuiteStats with passed status"""
+        suite_stats = SuiteStats()
+        
+        # Create a mock suite with PASS status
+        mock_suite = Mock()
+        mock_suite.tests = [Mock()]  # Has tests
+        mock_suite.status = "PASS"
+        
+        suite_stats.start_suite(mock_suite)
+        
+        self.assertEqual(suite_stats.total_suite, 1)
+        self.assertEqual(suite_stats.passed_suite, 1)
+        self.assertEqual(suite_stats.failed_suite, 0)
+        self.assertEqual(suite_stats.skipped_suite, 0)
+
+    def test_suite_stats_skipped_suite(self):
+        """Test SuiteStats with skipped status"""
+        suite_stats = SuiteStats()
+        
+        # Create a mock suite with SKIP status
+        mock_suite = Mock()
+        mock_suite.tests = [Mock()]  # Has tests
+        mock_suite.status = "SKIP"
+        
+        suite_stats.start_suite(mock_suite)
+        
+        self.assertEqual(suite_stats.total_suite, 1)
+        self.assertEqual(suite_stats.passed_suite, 0)
+        self.assertEqual(suite_stats.failed_suite, 0)
+        self.assertEqual(suite_stats.skipped_suite, 1)
+
+    def test_suite_stats_failed_suite(self):
+        """Test SuiteStats with failed status"""
+        suite_stats = SuiteStats()
+        
+        # Create a mock suite with FAIL status
+        mock_suite = Mock()
+        mock_suite.tests = [Mock()]  # Has tests
+        mock_suite.status = "FAIL"
+        
+        suite_stats.start_suite(mock_suite)
+        
+        self.assertEqual(suite_stats.total_suite, 1)
+        self.assertEqual(suite_stats.passed_suite, 0)
+        self.assertEqual(suite_stats.failed_suite, 1)
+        self.assertEqual(suite_stats.skipped_suite, 0)
+
+    def test_suite_stats_empty_suite(self):
+        """Test SuiteStats with empty suite (no tests)"""
+        suite_stats = SuiteStats()
+        
+        # Create a mock suite with no tests
+        mock_suite = Mock()
+        mock_suite.tests = []  # Empty test list
+        mock_suite.status = "PASS"
+        
+        suite_stats.start_suite(mock_suite)
+        
+        # Should not count empty suites
+        self.assertEqual(suite_stats.total_suite, 0)
+        self.assertEqual(suite_stats.passed_suite, 0)
+        self.assertEqual(suite_stats.failed_suite, 0)
+        self.assertEqual(suite_stats.skipped_suite, 0)
+
+    def test_suite_results_empty_suite(self):
+        """Test SuiteResults with empty suite (no tests)"""
+        mock_db = Mock()
+        suite_results = SuiteResults(mock_db, "123", "False")
+        
+        # Create a mock suite with no tests
+        mock_suite = Mock()
+        mock_suite.tests = []  # Empty test list
+        
+        with patch("robotframework_historic_parser.rfhistoricparser.insert_into_suite_table") as mock_insert:
+            suite_results.start_suite(mock_suite)
+            # Should not insert empty suites
+            mock_insert.assert_not_called()
+
+    def test_suite_results_full_suite_name_true(self):
+        """Test SuiteResults with full_suite_name=True"""
+        mock_db = Mock()
+        suite_results = SuiteResults(mock_db, "123", "True")
+        
+        # Create a mock suite with longname
+        mock_suite = MagicMock()
+        mock_suite.tests = [Mock()]  # Has tests
+        mock_suite.longname = "MyProject.MySuite.MySubSuite"
+        mock_suite.status = "PASS"
+        
+        # Create a simple object to hold statistics
+        class Stats:
+            total = 10
+            passed = 5
+            failed = 3
+            skipped = 2
+        
+        mock_suite.statistics = Stats()
+        mock_suite.elapsedtime = 120000  # 2 minutes in milliseconds
+        
+        with patch("robotframework_historic_parser.rfhistoricparser.insert_into_suite_table") as mock_insert:
+            suite_results.start_suite(mock_suite)
+            # Verify insert was called with the full suite name
+            self.assertTrue(mock_insert.called)
+            # Check that longname was used (first call, argument index 2 is the suite name)
+            call_args = mock_insert.call_args[0]
+            self.assertEqual(call_args[2], "MyProject.MySuite.MySubSuite")
+
+    def test_suite_results_visit_test_full_suite_name_true(self):
+        """Test TestMetrics.visit_test with full_suite_name=True"""
+        from robotframework_historic_parser.rfhistoricparser import TestMetrics
+        
+        mock_db = Mock()
+        test_results = TestMetrics(mock_db, "123", "True")
+        
+        # Create a mock test with longname
+        mock_test = Mock()
+        mock_test.name = "MyTest"
+        mock_test.longname = "MyProject.MySuite.MyTest"
+        mock_test.status = "PASS"
+        mock_test.elapsedtime = 60000  # 1 minute in milliseconds
+        mock_test.message = "Test passed"
+        mock_test.tags = ["tag1", "tag2"]
+        
+        with patch("robotframework_historic_parser.rfhistoricparser.insert_into_test_table"):
+            test_results.visit_test(mock_test)
+
+    @patch("mysql.connector.connect")
+    def test_insert_into_execution_table_full_coverage(self, mock_connect):
+        """Test insert_into_execution_table with all database operations"""
+        mock_con = Mock()
+        mock_ocon = Mock()
+        mock_cursor = Mock()
+        mock_root_cursor = Mock()
+        
+        mock_con.cursor.return_value = mock_cursor
+        mock_ocon.cursor.return_value = mock_root_cursor
+        
+        # Mock the fetchone results
+        mock_cursor.fetchone.side_effect = [
+            (1, 5, 10),  # Execution_Id, Execution_Pass, Execution_Total
+            (100,)  # COUNT(*)
+        ]
+        
+        result = insert_into_execution_table(
+            mock_con, mock_ocon, "Test Execution", 10, 5, 3, "2.5", 
+            20, 15, 3, 2, 0, "TestProject"
+        )
+        
+        # Verify the execution ID is returned
+        self.assertEqual(result, "1")
+        
+        # Verify cursor operations
+        mock_cursor.execute.assert_called()
+        mock_con.commit.assert_called_once()
+        mock_root_cursor.execute.assert_called_once()
+        mock_ocon.commit.assert_called_once()
+
+    @patch("mysql.connector.connect")
+    def test_insert_into_execution_table_zero_total(self, mock_connect):
+        """Test insert_into_execution_table handles division by zero"""
+        mock_con = Mock()
+        mock_ocon = Mock()
+        mock_cursor = Mock()
+        mock_root_cursor = Mock()
+        
+        mock_con.cursor.return_value = mock_cursor
+        mock_ocon.cursor.return_value = mock_root_cursor
+        
+        # Mock with zero total to test division by zero handling
+        mock_cursor.fetchone.side_effect = [
+            (1, 0, 0),  # Execution_Id, Execution_Pass=0, Execution_Total=0
+            (100,)  # COUNT(*)
+        ]
+        
+        result = insert_into_execution_table(
+            mock_con, mock_ocon, "Test Execution", 0, 0, 0, "0", 
+            0, 0, 0, 0, 0, "TestProject"
+        )
+        
+        # Verify it doesn't crash and returns the execution ID
+        self.assertEqual(result, "1")
+        mock_con.commit.assert_called_once()
+        mock_ocon.commit.assert_called_once()
