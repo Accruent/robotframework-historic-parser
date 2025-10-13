@@ -287,8 +287,8 @@ def process_allure_report(opts):
 
         total = statistics.get('total', '0')
         passed = statistics.get('passed', '0')
-        failed = int(statistics.get('failed', '0')) + int(statistics.get('unknown', '0'))
-        skipped = statistics.get('skipped', '0')
+        failed = int(statistics.get('failed', '0')) + int(statistics.get('broken', '0'))
+        skipped = int(statistics.get('skipped', '0')) + int(statistics.get('unknown', '0'))
         elapsedtime = '0' # duration data not saved in the summary.json
     else:
         print("Invalid file type. Please provide either .xml or .json file.")
