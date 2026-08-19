@@ -11,6 +11,7 @@ with open('requirements.txt') as f:
 setup(
     name='robotframework-historic-parser',
     version=version.VERSION,
+    python_requires='>=3.10',
     description='Parser to push robotframework execution results to MySQL',
     classifiers=[
           'Framework :: Robot Framework',

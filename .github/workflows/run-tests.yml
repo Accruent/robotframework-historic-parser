@@ -10,20 +10,42 @@ jobs:
   run-tests:
     runs-on: ubuntu-latest
     strategy:
-        matrix:
-          python-version: [ 3.9, '3.10', '3.11' , '3.12']
+      fail-fast: false
+      matrix:
+        python-version: ['3.10', '3.11', '3.12', '3.13', '3.14']
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v7
       - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v6
         with:
           python-version: ${{ matrix.python-version }}
 
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install .
-          pip install coveralls mock pytest-cov
+          python -m pip install .
+
+      - name: Verify installed package metadata
+        run: |
+          python - <<'PY'
+          from importlib.metadata import distribution
+          import setuptools
+
+          package = distribution('robotframework-historic-parser')
+          assert package.version == '0.2.2', package.version
+          assert package.metadata['Requires-Python'] == '>=3.10'
+          assert any(
+              requirement.startswith('setuptools~=84.0.0')
+              for requirement in (package.requires or [])
+          )
+          assert setuptools.__version__.startswith('84.0.'), setuptools.__version__
+          print(package.version)
+          print(package.metadata['Requires-Python'])
+          print(setuptools.__version__)
+
+      - name: Install test dependencies
+        run: |
+          python -m pip install coveralls mock pytest-cov
       - name: Run Unit Tests
         run: |
           pytest --cov-config=test/.coveragerc --cov=robotframework_historic_parser -v
