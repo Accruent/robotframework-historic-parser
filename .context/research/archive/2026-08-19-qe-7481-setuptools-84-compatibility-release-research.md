@@ -1,8 +1,8 @@
 # QE-7481 Research: Setuptools 84 Compatibility and Historic Parser Release
 
-Research date: 2026-08-19  
-Ticket: [QE-7481](https://accruent.atlassian.net/browse/QE-7481)  
-Status: Develop  
+Research date: 2026-08-19
+Ticket: [QE-7481](https://accruent.atlassian.net/browse/QE-7481)
+Status: Develop
 Research status: Complete historical baseline; final execution outcome is recorded in the addendum below. Production code and tests were not modified during research.
 
 ## Final Execution Addendum
